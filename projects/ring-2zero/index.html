@@ -7,9 +7,7 @@
   <meta name="description" content="A Rust Wayland screen streaming server that sends your desktop to any browser over WebRTC using tile diffing and WebP.">
   <meta name="theme-color" content="#090b10">
   <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="../../assets/fonts/lato-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../../assets/site.css">
 </head>
 <body class="inner">
@@ -39,8 +37,8 @@
       <p>It is for anyone who wants to see, and optionally control, a Wayland desktop from a phone or another computer on a LAN, over a VPN such as Tailscale, or across the internet with their own STUN/TURN servers. The default branch of the repository is <code>remaster</code>; the current version is 0.400.0.</p>
 
       <div class="gallery">
-<figure><img src="../../assets/img/projects/ring-2zero-login.png" alt="The client page asking for the token" width="1280" height="800" decoding="async"><figcaption>Connect: open the server URL and enter the token it printed. The browser remembers it.</figcaption></figure>
-<figure><img src="../../assets/img/projects/ring-2zero-stream.png" alt="A Wayland desktop streamed into the browser with a live statistics bar" width="1280" height="800" decoding="async"><figcaption>The stream: the screen in a browser tab, with tiles per second, traffic, latency and screen size on top.</figcaption></figure>
+<figure><img src="../../assets/img/projects/ring-2zero-login.webp" alt="The client page asking for the token" width="1280" height="800" decoding="async"><figcaption>Connect: open the server URL and enter the token it printed. The browser remembers it.</figcaption></figure>
+<figure><img src="../../assets/img/projects/ring-2zero-stream.webp" alt="A Wayland desktop streamed into the browser with a live statistics bar" width="1280" height="800" decoding="async"><figcaption>The stream: the screen in a browser tab, with tiles per second, traffic, latency and screen size on top.</figcaption></figure>
       </div>
       <p>The screenshots show a throwaway nested desktop (a video and a dialog) streamed to a headless browser.</p>
 
@@ -58,7 +56,7 @@
       <p>With <code>--control</code> (off by default) a CONTROL button appears and mouse, wheel and keyboard input is injected through the compositor's virtual-pointer and virtual-keyboard protocols, and clipboard sync works in both directions. On a touch screen a long-press sends a right-click and a two-finger drag scrolls.</p>
       <div class="note-box"><p>Anyone with the token gets full keyboard and mouse access to your session, and clipboard read and write, when <code>--control</code> is on. The token is no substitute for network isolation: keep the port reachable only over a VPN rather than a public port-forward.</p></div>
 
-      <figure><img src="../../assets/img/projects/ring-2zero-stream-debug.png" alt="The DEBUG button shows the connection counters" width="1280" height="800" decoding="async"><figcaption>Diagnostics: the DEBUG button adds message, acknowledgement and tile counters, failures and the canvas size.</figcaption></figure>
+      <figure><img src="../../assets/img/projects/ring-2zero-stream-debug.webp" alt="The DEBUG button shows the connection counters" width="1280" height="800" decoding="async"><figcaption>Diagnostics: the DEBUG button adds message, acknowledgement and tile counters, failures and the canvas size.</figcaption></figure>
 
       <h3>Getting it and running it</h3>
 <pre><code>git clone https://github.com/tarilka0gg/Ring-2Zero.git

@@ -7,9 +7,7 @@
   <meta name="description" content="A Windows-style installer for Linux that installs deb, rpm, AppImage, snap, Flatpak, Wine and archive packages into the home directory, with a clean uninstall.">
   <meta name="theme-color" content="#090b10">
   <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="../../assets/fonts/lato-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../../assets/site.css">
 </head>
 <body class="inner">
@@ -39,8 +37,8 @@
       <p>It is meant for people coming from Windows or macOS who just want to run something they downloaded, and for me, because <a href="../simple-linux/">Simple Linux</a> should not make anybody learn five package tools to run a downloaded file. There is a command-line tool (<code>ustan</code>) and a GTK4/libadwaita front end (<code>ustan-gui</code>) that share the same core.</p>
 
       <div class="gallery">
-<figure><img src="../../assets/img/projects/ustan-inspect.png" alt="ustan opens a package and shows its name, format and icon" width="1125" height="900" decoding="async"><figcaption>Open a package: ustan shows what it is and offers Install, Open or Extract here.</figcaption></figure>
-<figure><img src="../../assets/img/projects/ustan-installing.png" alt="The install progress bar with a Cancel button" width="1125" height="900" decoding="async"><figcaption>Installing: a progress bar with a Cancel button while the package is unpacked and the launcher is made.</figcaption></figure>
+<figure><img src="../../assets/img/projects/ustan-inspect.webp" alt="ustan opens a package and shows its name, format and icon" width="1125" height="900" decoding="async"><figcaption>Open a package: ustan shows what it is and offers Install, Open or Extract here.</figcaption></figure>
+<figure><img src="../../assets/img/projects/ustan-installing.webp" alt="The install progress bar with a Cancel button" width="1125" height="900" decoding="async"><figcaption>Installing: a progress bar with a Cancel button while the package is unpacked and the launcher is made.</figcaption></figure>
       </div>
 
       <h3>Formats and how each is installed</h3>
@@ -75,8 +73,8 @@ ustan register [--exe] [--archives]   open these file types with ustan on double
       <p><code>ustan-gui</code> opens the files you double-click, shows what they are with progress and a cancel button, and lists installed apps with Update / Launch / Remove. Run without a file, it opens the manager. When a launched program dies right away, the GUI shows a toast with its output. AppImages start with <code>APPIMAGE_EXTRACT_AND_RUN=1</code> when FUSE 2 is missing.</p>
 
       <div class="gallery">
-<figure><img src="../../assets/img/projects/ustan-installed.png" alt="The installed screen with Open and Close buttons" width="1125" height="900" decoding="async"><figcaption>Installed: Open starts the program, Close ends.</figcaption></figure>
-<figure><img src="../../assets/img/projects/ustan-manager.png" alt="The manager listing installed apps with Launch and Remove" width="1125" height="900" decoding="async"><figcaption>The manager: installed apps with their format and version, each with Launch and Remove.</figcaption></figure>
+<figure><img src="../../assets/img/projects/ustan-installed.webp" alt="The installed screen with Open and Close buttons" width="1125" height="900" decoding="async"><figcaption>Installed: Open starts the program, Close ends.</figcaption></figure>
+<figure><img src="../../assets/img/projects/ustan-manager.webp" alt="The manager listing installed apps with Launch and Remove" width="1125" height="900" decoding="async"><figcaption>The manager: installed apps with their format and version, each with Launch and Remove.</figcaption></figure>
       </div>
       <p>Screenshots are ustan-gui on a Wayland desktop with a few sample packages installed (a .deb, an AppImage, a tarball, a .jar and a bare binary).</p>
 

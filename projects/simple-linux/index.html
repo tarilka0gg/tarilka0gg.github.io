@@ -7,9 +7,7 @@
   <meta name="description" content="A small Gentoo-based live system with its own installer: how it is built, how to try it, and what has been tested.">
   <meta name="theme-color" content="#090b10">
   <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="../../assets/fonts/lato-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../../assets/site.css">
 </head>
 <body class="inner">
@@ -38,7 +36,7 @@
       <p>Simple Linux is a small Gentoo-based live system with its own installer. It ships as two bootable images (a text one and a GUI one), the stage3 they install from, a kernel, and the desktop setup the GUI image boots into. Gentoo stays underneath: Portage, OpenRC, your own <code>USE</code> flags and overlays all remain available. What I wanted to remove is the first day of a Gentoo install, the typing and the hours of compiling.</p>
       <p>It is for people who like Gentoo but do not want to follow the handbook by hand, and it is for me, as the system I actually run. It is young. If you want a distribution that is finished and supported today, use one of those; if you want Gentoo without the first day, try this and tell me what happens.</p>
 
-<figure><img src="../../assets/img/projects/simple-linux-desktop.png" alt="The Simple Linux live desktop: niri with the Noctalia bar and dock" width="1280" height="800" decoding="async"><figcaption>The GUI image after boot: niri with the Noctalia bar and dock, in the colours of the wallpaper (0.2.33, in a virtual machine).</figcaption></figure>
+<figure><img src="../../assets/img/projects/simple-linux-desktop.webp" alt="The Simple Linux live desktop: niri with the Noctalia bar and dock" width="1280" height="800" decoding="async"><figcaption>The GUI image after boot: niri with the Noctalia bar and dock, in the colours of the wallpaper (0.2.33, in a virtual machine).</figcaption></figure>
 
       <h3>How it fits together</h3>
       <p>The repository holds what comes out of the build and the parts that are configuration rather than code. The installer and the scripts that build the images live in <a href="../installer/">gentoo-installer</a>. The pieces:</p>
@@ -54,7 +52,7 @@
       <p>The base is a Gentoo stage3 (OpenRC) with fish as root's shell. The GUI image adds niri and Noctalia (colours follow the wallpaper, and the terminal, GTK programs, btop, tmux and fastfetch follow too, through Noctalia's templates), Ghostty, Thunar, GParted, PipeWire, Zen Browser (downloaded on first use), <a href="../portage-store/">Portage Store</a>, <a href="../ustan/">ustan</a> for <code>.deb</code>, AppImage, Flatpak and <code>.exe</code> files, and <a href="../tui-shim/">tui-shim</a>, which makes terminal programs behave like desktop apps. The live system uses a static BusyBox for 83 of the GNU coreutils programs; the installed system keeps GNU coreutils.</p>
 
       <div class="gallery">
-<figure><img src="../../assets/img/projects/simple-linux-launcher.png" alt="The launcher listing Install Simple Linux, Ghostty, Thunar, Zen Browser and Portage Store" width="1280" height="800" decoding="async"><figcaption>The launcher. It starts with the installer, the terminal, files and the browser.</figcaption></figure><figure><img src="../../assets/img/projects/simple-linux-terminal.png" alt="Ghostty running fish and fastfetch" width="1280" height="800" decoding="async"><figcaption>Ghostty with fish and fastfetch.</figcaption></figure><figure><img src="../../assets/img/projects/simple-linux-tiling.png" alt="Thunar and btop side by side in niri" width="1280" height="800" decoding="async"><figcaption>Thunar and btop side by side in niri's scrolling columns.</figcaption></figure>
+<figure><img src="../../assets/img/projects/simple-linux-launcher.webp" alt="The launcher listing Install Simple Linux, Ghostty, Thunar, Zen Browser and Portage Store" width="1280" height="800" decoding="async"><figcaption>The launcher. It starts with the installer, the terminal, files and the browser.</figcaption></figure><figure><img src="../../assets/img/projects/simple-linux-terminal.webp" alt="Ghostty running fish and fastfetch" width="1280" height="800" decoding="async"><figcaption>Ghostty with fish and fastfetch.</figcaption></figure><figure><img src="../../assets/img/projects/simple-linux-tiling.webp" alt="Thunar and btop side by side in niri" width="1280" height="800" decoding="async"><figcaption>Thunar and btop side by side in niri's scrolling columns.</figcaption></figure>
       </div>
 
       <h3>Why not a plain Gentoo install</h3>

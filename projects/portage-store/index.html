@@ -7,9 +7,7 @@
   <meta name="description" content="A GTK4/libadwaita application store for Gentoo Portage with a CLI: features, architecture, the privilege model and test status.">
   <meta name="theme-color" content="#090b10">
   <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="../../assets/fonts/lato-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../../assets/site.css">
 </head>
 <body class="inner">
@@ -38,7 +36,7 @@
       <p>Portage Store is a GTK4/libadwaita application store for Gentoo's Portage package manager, plus a terminal companion that shares the same core. You can search and install packages, watch builds stream live in a job queue, and get told about the things Gentoo expects you to remember to check yourself: security advisories, unread news, pending config updates, a stale tree and orphaned packages. It is written in Rust and ships in the <a href="../simple-linux/">Simple Linux</a> GUI image.</p>
       <p>It works and I use it daily on my own system, but it is young. The privilege model is deliberately documented rather than hidden, and you should read that section below before installing.</p>
 
-<figure><img src="../../assets/img/projects/portage-store-explore.png" alt="The Explore landing page with category tiles and themed carousels" width="1300" height="840" decoding="async"><figcaption>The Explore page: category tiles above themed carousels of packages.</figcaption></figure>
+<figure><img src="../../assets/img/projects/portage-store-explore.webp" alt="The Explore landing page with category tiles and themed carousels" width="1300" height="840" decoding="async"><figcaption>The Explore page: category tiles above themed carousels of packages.</figcaption></figure>
 
       <h3>Features</h3>
       <h4>Finding things</h4>
@@ -73,7 +71,7 @@
       </ul>
 
       <div class="gallery">
-<figure><img src="../../assets/img/projects/portage-store-onboarding.png" alt="The first-run welcome with a system scan and starter bundles" width="1300" height="840" decoding="async"><figcaption>First run: what is installed, pending updates and orphans, plus optional starter bundles.</figcaption></figure><figure><img src="../../assets/img/projects/portage-store-search.png" alt="Search results for gimp" width="1300" height="840" decoding="async"><figcaption>Search: name and description matches, ranked; installed packages carry a check mark.</figcaption></figure><figure><img src="../../assets/img/projects/portage-store-detail.png" alt="A package page with upstream screenshots" width="1300" height="840" decoding="async"><figcaption>A package page with upstream screenshots and the Install / Remove button.</figcaption></figure><figure><img src="../../assets/img/projects/portage-store-use-flags.png" alt="The USE flag editor" width="1300" height="840" decoding="async"><figcaption>The USE flag editor: every flag with its description and how many other installed packages share it.</figcaption></figure><figure><img src="../../assets/img/projects/portage-store-updates.png" alt="The Updates tab" width="1300" height="840" decoding="async"><figcaption>The Updates tab, with Update All or one by one.</figcaption></figure>
+<figure><img src="../../assets/img/projects/portage-store-onboarding.webp" alt="The first-run welcome with a system scan and starter bundles" width="1300" height="840" decoding="async"><figcaption>First run: what is installed, pending updates and orphans, plus optional starter bundles.</figcaption></figure><figure><img src="../../assets/img/projects/portage-store-search.webp" alt="Search results for gimp" width="1300" height="840" decoding="async"><figcaption>Search: name and description matches, ranked; installed packages carry a check mark.</figcaption></figure><figure><img src="../../assets/img/projects/portage-store-detail.webp" alt="A package page with upstream screenshots" width="1300" height="840" decoding="async"><figcaption>A package page with upstream screenshots and the Install / Remove button.</figcaption></figure><figure><img src="../../assets/img/projects/portage-store-use-flags.webp" alt="The USE flag editor" width="1300" height="840" decoding="async"><figcaption>The USE flag editor: every flag with its description and how many other installed packages share it.</figcaption></figure><figure><img src="../../assets/img/projects/portage-store-updates.webp" alt="The Updates tab" width="1300" height="840" decoding="async"><figcaption>The Updates tab, with Update All or one by one.</figcaption></figure>
       </div>
       <p>The screenshots were taken in the Simple Linux live session in a virtual machine.</p>
 

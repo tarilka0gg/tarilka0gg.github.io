@@ -7,9 +7,7 @@
   <meta name="description" content="A Rust tool that gives terminal apps launcher entries and icons on niri, and adds a native file picker badge to micro and nvim in ghostty.">
   <meta name="theme-color" content="#090b10">
   <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="../../assets/fonts/lato-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../../assets/site.css">
 </head>
 <body class="inner">
@@ -39,8 +37,8 @@
       <p>It exists for <a href="../simple-linux/">Simple Linux</a>, where a newcomer who opens a terminal editor should not need to know how to type a path. Nothing runs as a daemon: everything starts on demand when the editor launches.</p>
 
       <div class="gallery">
-<figure><img src="../../assets/img/projects/tui-shim-badge.png" alt="micro in ghostty with the round folder badge in the top-right corner" width="1280" height="800" decoding="async"><figcaption>The badge: micro in ghostty with a round folder button in the corner. Click it or press F9.</figcaption></figure>
-<figure><img src="../../assets/img/projects/tui-shim-picker.png" alt="The file picker, a floating window over the editor" width="1280" height="800" decoding="async"><figcaption>The picker: a native browser with folders and files; Enter opens the file in the same editor window.</figcaption></figure>
+<figure><img src="../../assets/img/projects/tui-shim-badge.webp" alt="micro in ghostty with the round folder badge in the top-right corner" width="1280" height="800" decoding="async"><figcaption>The badge: micro in ghostty with a round folder button in the corner. Click it or press F9.</figcaption></figure>
+<figure><img src="../../assets/img/projects/tui-shim-picker.webp" alt="The file picker, a floating window over the editor" width="1280" height="800" decoding="async"><figcaption>The picker: a native browser with folders and files; Enter opens the file in the same editor window.</figcaption></figure>
       </div>
       <p>Screenshots were taken in the Simple Linux live session in a virtual machine.</p>
 
@@ -58,8 +56,8 @@
       <p>niri reports no position for tiled windows, only for floating ones. So placement is a decision tree: a floating window gives an exact position; a tiled window whose workspace columns all fit on the monitor is computed from the column widths and the gap; anything else (a scrolled strip, which is common) uses a probe. For the probe, the wrapper redraws the badge for a moment with its colour changed by 3 in blue, which is invisible, the overlay takes one <code>grim</code> screenshot and looks for that exact colour. That takes about 90 to 200 ms. If <code>grim</code> is missing or the probe fails, the panel is centred near the top of the monitor.</p>
 
       <div class="gallery">
-<figure><img src="../../assets/img/projects/tui-shim-picker-search.png" alt="The picker search finds files in sub-folders too" width="1280" height="800" decoding="async"><figcaption>Search is case-insensitive, ranks exact and prefix matches first, and searches sub-folders too.</figcaption></figure>
-<figure><img src="../../assets/img/projects/tui-shim-launcher.png" alt="Launcher entries with line-drawn icons: btop, Edit in terminal, micro, tmux" width="600" height="580" decoding="async"><figcaption>Launcher entries: one per TUI app, with an icon and its own window class, plus "Edit in terminal...".</figcaption></figure>
+<figure><img src="../../assets/img/projects/tui-shim-picker-search.webp" alt="The picker search finds files in sub-folders too" width="1280" height="800" decoding="async"><figcaption>Search is case-insensitive, ranks exact and prefix matches first, and searches sub-folders too.</figcaption></figure>
+<figure><img src="../../assets/img/projects/tui-shim-launcher.webp" alt="Launcher entries with line-drawn icons: btop, Edit in terminal, micro, tmux" width="600" height="580" decoding="async"><figcaption>Launcher entries: one per TUI app, with an icon and its own window class, plus "Edit in terminal...".</figcaption></figure>
       </div>
 
       <h3>The launcher side</h3>
@@ -78,7 +76,7 @@ tui-shim shims [install|remove|status]  # make plain `micro`/`nvim` use it
 tui-shim niri-rule            # optional window-rule snippet
 tui-shim doctor</code></pre>
       <p>Global flags: <code>--dry-run</code>, <code>--offline</code>, <code>--palette FILE</code>. Build with Rust 2024; <code>cargo build --release --no-default-features</code> builds only the launcher and theme tooling, without GTK. A Gentoo live ebuild is in <code>packaging/gentoo/</code>.</p>
-      <figure><img src="../../assets/img/projects/tui-shim-cli.png" alt="scan, shims status and doctor in a terminal" width="760" height="310" decoding="async"><figcaption>The command line: <code>scan</code>, <code>shims status</code> and <code>doctor</code>.</figcaption></figure>
+      <figure><img src="../../assets/img/projects/tui-shim-cli.webp" alt="scan, shims status and doctor in a terminal" width="760" height="310" decoding="async"><figcaption>The command line: <code>scan</code>, <code>shims status</code> and <code>doctor</code>.</figcaption></figure>
 
       <h3>What was tested, and what was not</h3>
       <p>The integration handoff document lists 30 unit tests (input filter, badge geometry, probe blob finder, registry, files, palette). I also drove the wrapper under a pty from Python, checking that every badge cell registers a click and cells outside do not. Layout behaviour was tried in a nested niri with ghostty and <code>grim</code>, which cannot inject real pointer input, and I tested interactively on my real session after each change.</p>

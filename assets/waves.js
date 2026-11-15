@@ -35,17 +35,27 @@
     return center + Math.sin(t) * ampBase * (wave.amp / 0.16) * breathe;
   }
 
-  function stroke(wave, lineWidth, alpha, blur) {
-    const step = Math.max(3, w / 300);
+  // The glow is faked with a few wide, faint strokes of the same path.
+  // (ctx.shadowBlur looked the same but cost 23-87 ms per frame; this is 3-5 ms.)
+  const layers = [
+    (wv) => [wv.glow * 1.6, 0.025],
+    (wv) => [wv.glow * 0.7, 0.05],
+    (wv) => [wv.width * 3, 0.12],
+    (wv) => [wv.width, 0.5],
+  ];
+
+  function draw(wave) {
+    const step = Math.max(4, w / 320);
     ctx.beginPath();
     ctx.moveTo(0, y(wave, 0));
     for (let x = step; x <= w + step; x += step) ctx.lineTo(x, y(wave, x));
-    const a = w < 700 ? alpha * 0.6 : alpha;
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = `rgba(${wave.rgb},${a})`;
-    ctx.shadowColor = `rgba(${wave.rgb},${a})`;
-    ctx.shadowBlur = blur;
-    ctx.stroke();
+    const dim = w < 700 ? 0.6 : 1;
+    for (const layer of layers) {
+      const [lineWidth, alpha] = layer(wave);
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = `rgba(${wave.rgb},${alpha * dim})`;
+      ctx.stroke();
+    }
   }
 
   function frame(now) {
@@ -54,12 +64,11 @@
     ctx.clearRect(0, 0, w, h);
     ctx.globalCompositeOperation = "lighter";
     ctx.lineCap = "round";
+    ctx.lineJoin = "round";
     for (const wave of waves) {
       if (!still) wave.phase += wave.speed * dt;
-      stroke(wave, wave.glow, 0.04, wave.glow * 1.5); // soft halo
+      draw(wave);
     }
-    for (const wave of waves) stroke(wave, wave.width, 0.45, wave.glow * 0.4); // bright core
-    ctx.shadowBlur = 0;
     ctx.globalCompositeOperation = "source-over";
     if (running && !still) requestAnimationFrame(frame);
   }

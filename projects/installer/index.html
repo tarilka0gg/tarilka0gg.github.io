@@ -7,9 +7,7 @@
   <meta name="description" content="The Rust installer and image build scripts behind Simple Linux: pipeline, features, headless use and what has been tested.">
   <meta name="theme-color" content="#090b10">
   <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="../../assets/fonts/lato-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../../assets/site.css">
 </head>
 <body class="inner">
@@ -38,7 +36,7 @@
       <p>This is the installer and the image build scripts behind <a href="../simple-linux/">Simple Linux</a>. It installs Gentoo (OpenRC, Limine) onto a disk from binary packages, with a kernel picked for the machine's hardware. In a QEMU VM with KVM that takes about ten minutes when it merges the packages one by one, and under two minutes for the default desktop, which comes as one archive. Those times are VM measurements.</p>
       <p>It has two front ends over one core: a ratatui text installer (which also runs <code>--headless</code>) and a GTK4 + libadwaita wizard. It is written in Rust.</p>
 
-<figure><img src="../../assets/img/projects/installer-welcome.png" alt="The installer welcome page" width="640" height="700" decoding="async"><figcaption>The first screen: disk, kernel and boot are decided for you.</figcaption></figure>
+<figure><img src="../../assets/img/projects/installer-welcome.webp" alt="The installer welcome page" width="640" height="700" decoding="async"><figcaption>The first screen: disk, kernel and boot are decided for you.</figcaption></figure>
 
       <h3>Architecture</h3>
       <ul>
@@ -63,7 +61,7 @@
       </ul>
 
       <div class="gallery">
-<figure><img src="../../assets/img/projects/installer-desktop.png" alt="Desktop page: choose a compositor" width="640" height="700" decoding="async"><figcaption>Pick a compositor (niri, Hyprland, Sway, Labwc, MangoWC, dwl); Noctalia comes with any of them.</figcaption></figure><figure><img src="../../assets/img/projects/installer-graphics.png" alt="Graphics driver page" width="640" height="700" decoding="async"><figcaption>The cards found; the choice picks the kernel build and, for NVIDIA, whether the proprietary driver is compiled.</figcaption></figure><figure><img src="../../assets/img/projects/installer-software.png" alt="Software page with a group opened" width="640" height="700" decoding="async"><figcaption>Software groups. Every program has a sentence and many have a screenshot.</figcaption></figure><figure><img src="../../assets/img/projects/installer-options.png" alt="Build options page" width="640" height="700" decoding="async"><figcaption>Build options: -O3, everything from source, a kernel for this computer. All off by default.</figcaption></figure><figure><img src="../../assets/img/projects/installer-disk.png" alt="Disk page" width="640" height="700" decoding="async"><figcaption>Erase the whole disk or install next to what is there; disks that are too small are greyed out.</figcaption></figure><figure><img src="../../assets/img/projects/installer-installing.png" alt="Installing page with progress bar and live log" width="640" height="700" decoding="async"><figcaption>Sixteen phases with a progress bar and a live log. This is the simulated run.</figcaption></figure>
+<figure><img src="../../assets/img/projects/installer-desktop.webp" alt="Desktop page: choose a compositor" width="640" height="700" decoding="async"><figcaption>Pick a compositor (niri, Hyprland, Sway, Labwc, MangoWC, dwl); Noctalia comes with any of them.</figcaption></figure><figure><img src="../../assets/img/projects/installer-graphics.webp" alt="Graphics driver page" width="640" height="700" decoding="async"><figcaption>The cards found; the choice picks the kernel build and, for NVIDIA, whether the proprietary driver is compiled.</figcaption></figure><figure><img src="../../assets/img/projects/installer-software.webp" alt="Software page with a group opened" width="640" height="700" decoding="async"><figcaption>Software groups. Every program has a sentence and many have a screenshot.</figcaption></figure><figure><img src="../../assets/img/projects/installer-options.webp" alt="Build options page" width="640" height="700" decoding="async"><figcaption>Build options: -O3, everything from source, a kernel for this computer. All off by default.</figcaption></figure><figure><img src="../../assets/img/projects/installer-disk.webp" alt="Disk page" width="640" height="700" decoding="async"><figcaption>Erase the whole disk or install next to what is there; disks that are too small are greyed out.</figcaption></figure><figure><img src="../../assets/img/projects/installer-installing.webp" alt="Installing page with progress bar and live log" width="640" height="700" decoding="async"><figcaption>Sixteen phases with a progress bar and a live log. This is the simulated run.</figcaption></figure>
       </div>
 
       <h3>Design choices</h3>
