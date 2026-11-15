@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Projects — tarilka0gg</title>
+  <meta name="description" content="Simple Linux, its installer, ustan, Portage Store, tui-shim, Ring-2Zero and the other projects of tarilka0gg.">
+  <meta name="theme-color" content="#090b10">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/site.css">
+</head>
+<body class="inner">
+  <div class="waves" aria-hidden="true"><canvas></canvas></div>
+
+  <main class="page">
+    <header class="site-header">
+      <a class="name" href="../">tarilka0gg</a>
+      <nav aria-label="Site">
+        <a href="./" aria-current="page">Projects</a>
+        <a href="../about/">About</a>
+        <a href="https://github.com/tarilka0gg">GitHub</a>
+      </nav>
+    </header>
+
+    <section class="content">
+      <h2>Projects</h2>
+      <p class="lead">A small Gentoo-based distribution and the tools it needed. Every project says in its README what was tested and what was not.</p>
+
+      <p class="section-label">Simple Linux</p>
+      <ul class="projects">
+        <li>
+          <div><a class="title" href="https://github.com/tarilka0gg/simple-linux">Simple Linux</a><span class="kind">Distribution</span></div>
+          <p class="desc">A small Gentoo-based live system: online and offline ISOs, a kernel matched to your hardware, niri and Noctalia.</p>
+        </li>
+        <li>
+          <div><a class="title" href="https://github.com/tarilka0gg/gentoo-installer">Installer</a><span class="kind">Rust · GTK4</span></div>
+          <p class="desc">Text and GTK4 frontends over one Rust core. Installs next to other systems, resumes after a failure, boots with Limine.</p>
+        </li>
+        <li>
+          <div><a class="title" href="https://github.com/tarilka0gg/portage-store">Portage Store</a><span class="kind">Rust · GTK4</span></div>
+          <p class="desc">An app store for Gentoo Portage: browse, search, USE flags, updates, and a CLI on the same core.</p>
+        </li>
+        <li>
+          <div><a class="title" href="https://github.com/tarilka0gg/simple-linux-binhost">Binhost</a><span class="kind">Packages</span></div>
+          <p class="desc">Signed binary packages that Gentoo's own binhost lacks: niri, Noctalia, ghostty.</p>
+        </li>
+        <li>
+          <div><a class="title" href="https://github.com/tarilka0gg/kernel-matrix">kernel-matrix</a><span class="kind">Kernel</span></div>
+          <p class="desc">Kernel configs as a matrix of CPU, GPU, platform, EC and modem, merged from Kconfig fragments and verified.</p>
+        </li>
+      </ul>
+
+      <p class="section-label">Desktop tools</p>
+      <ul class="projects">
+        <li>
+          <div><a class="title" href="https://github.com/tarilka0gg/ustan">ustan</a><span class="kind">Rust · GTK4</span></div>
+          <p class="desc">A Windows-style app installer: .deb, .rpm, Arch packages, AppImage, snap, Flatpak, .exe. No root, clean uninstall.</p>
+        </li>
+        <li>
+          <div><a class="title" href="https://github.com/tarilka0gg/tui-shim">tui-shim</a><span class="kind">Rust</span></div>
+          <p class="desc">Terminal apps that behave like desktop apps: launchers, icons, palette theming and a file picker for editors.</p>
+        </li>
+        <li>
+          <div><a class="title" href="https://github.com/tarilka0gg/Ring-2Zero">Ring-2Zero</a><span class="kind">Rust · WebRTC</span></div>
+          <p class="desc">A Wayland screen streamer with tile-based diff encoding: your desktop in a browser tab.</p>
+        </li>
+        <li>
+          <div><a class="title" href="https://github.com/tarilka0gg/simple-linux-configs">Configs</a><span class="kind">Desktop</span></div>
+          <p class="desc">Clean default configs for niri, Hyprland, Sway, Labwc, MangoWC, dwl and more, paired with Noctalia.</p>
+        </li>
+      </ul>
+
+      <p class="section-label">Laptop lab</p>
+      <ul class="projects">
+        <li>
+          <div><a class="title" href="https://github.com/tarilka0gg/system-lab">system-lab</a><span class="kind">Notes · Data</span></div>
+          <p class="desc">BIOS unlock, undervolting, RAPL/EC turbo and Clang + AutoFDO kernel builds on an HP Victus 16, with the measurements.</p>
+        </li>
+        <li>
+          <div><a class="title" href="https://github.com/tarilka0gg/power-scripts">power-scripts</a><span class="kind">Shell</span></div>
+          <p class="desc">Deep-idle power management for a gaming laptop on OpenRC and niri.</p>
+        </li>
+        <li>
+          <div><a class="title" href="https://github.com/tarilka0gg/gpu-undervolt">gpu-undervolt</a><span class="kind">Shell</span></div>
+          <p class="desc">NVIDIA laptop GPU clock offsets at boot through a throwaway headless Xorg, on a Wayland-only system.</p>
+        </li>
+      </ul>
+
+      <p class="section-label">Upstream</p>
+      <ul class="projects">
+        <li>
+          <div><a class="title" href="https://github.com/danielrobbins/unroot">unroot</a><span class="kind">Contributions</span></div>
+          <p class="desc">Fixes for Daniel Robbins' Linux root filesystem tool: OCI layers, foreign-arch entry through QEMU, builds without LTO.</p>
+        </li>
+        <li>
+          <div><a class="title" href="https://github.com/danielrobbins/keychain">keychain</a><span class="kind">Contributions</span></div>
+          <p class="desc">Fixes for the ssh-agent and gpg-agent manager.</p>
+        </li>
+      </ul>
+    </section>
+
+    <footer class="lower">
+      <p>Linux developer · Gentoo · Rust</p>
+      <nav class="footer-links" aria-label="More">
+        <a href="../">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="../about/">About</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="../assets/waves.js" defer></script>
+</body>
+</html>

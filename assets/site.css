@@ -1,0 +1,177 @@
+/* tarilka0gg.github.io — one stylesheet for every page. */
+
+:root {
+  --bg: #090b10;
+  --bg-glow: #121a26;
+  --text: #f2f4f8;
+  --muted: #9aa3b2;
+  --faint: #5d6574;
+  --line: rgba(255, 255, 255, 0.08);
+  --accent: #8b74ff;
+  --font: "Lato", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 55% 40%, var(--bg-glow) 0%, transparent 70%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+.waves {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.waves canvas { display: block; width: 100%; height: 100%; }
+/* Inner pages: waves sink to the bottom and fade so text stays readable. */
+.inner .waves { opacity: .45; }
+
+.page {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 56px 80px 56px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.site-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+}
+.site-header h1, .site-header .name {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+.site-header nav {
+  display: flex;
+  gap: 28px;
+  font-size: 15px;
+}
+.site-header nav a {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color .2s;
+}
+.site-header nav a:hover,
+.site-header nav a[aria-current="page"] { color: var(--text); }
+
+/* Home: three-line motto that fades in line by line. */
+.motto {
+  margin: 14vh 0 0;
+  font-size: clamp(26px, 3.4vw, 44px);
+  font-weight: 300;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+.motto span {
+  display: block;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: rise .9s ease forwards;
+}
+.motto span:nth-child(2) { animation-delay: .35s; }
+.motto span:nth-child(3) { animation-delay: .7s; }
+
+@keyframes rise { to { opacity: 1; transform: none; } }
+
+.lower {
+  margin-top: auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.lower p { margin: 0; font-size: 20px; color: #c4cad4; }
+.footer-links {
+  display: flex;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--faint);
+}
+.footer-links a { color: var(--muted); text-underline-offset: 3px; }
+.footer-links a:hover { color: var(--text); }
+
+/* Inner pages */
+.content {
+  max-width: 760px;
+  margin: 12vh 0 80px;
+}
+.content h2 {
+  font-size: clamp(28px, 3vw, 38px);
+  font-weight: 300;
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+}
+.content .lead { color: var(--muted); margin: 0 0 48px; font-size: 19px; }
+.content p { color: #c4cad4; }
+.content a { text-underline-offset: 3px; text-decoration-color: var(--faint); }
+.content a:hover { text-decoration-color: var(--text); }
+
+.projects { list-style: none; margin: 0; padding: 0; }
+.projects li {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 24px;
+  padding: 22px 0;
+  border-top: 1px solid var(--line);
+}
+.projects li:last-child { border-bottom: 1px solid var(--line); }
+.projects .title { font-weight: 700; text-decoration: none; }
+.projects .title:hover { color: var(--accent); }
+.projects .kind {
+  display: block;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-top: 2px;
+}
+.projects .desc { color: var(--muted); margin: 0; }
+
+.section-label {
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin: 56px 0 4px;
+}
+
+@media (max-width: 700px) {
+  body { font-size: 16px; }
+  .page { padding: 32px 22px 32px; }
+  .site-header h1, .site-header .name { font-size: 26px; }
+  .site-header { flex-direction: column; gap: 10px; }
+  .site-header nav { gap: 20px; }
+  .motto { margin-top: 10vh; }
+  .lower { flex-direction: column; align-items: flex-start; }
+  .lower p { font-size: 17px; }
+  .projects li { grid-template-columns: 1fr; gap: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motto span { animation: none; opacity: 1; transform: none; }
+}
