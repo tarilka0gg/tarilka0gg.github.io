@@ -425,3 +425,5 @@ code {
 .feature .meta.live { margin-top: 8px; }
 .feed .repo a { font-weight: 400; color: var(--muted); }
 .feed .repo a:hover { color: var(--text); }
+
+.article .meta { padding-left: 0; }
