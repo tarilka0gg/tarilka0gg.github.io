@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portage Store — tarilka0gg — tarilka0gg</title>
+  <meta name="description" content="A GTK4/libadwaita application store for Gentoo Portage with a CLI: features, architecture, the privilege model and test status.">
+  <meta name="theme-color" content="#090b10">
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body class="inner">
+  <div class="waves" aria-hidden="true"><canvas></canvas></div>
+
+  <main class="page">
+    <header class="site-header">
+      <a class="name" href="../../">tarilka0gg</a>
+      <nav aria-label="Site">
+        <a href="../../projects/">Projects</a>
+        <a href="../../notes/">Notes</a>
+        <a href="../../updates/">Updates</a>
+        <a href="../../about/">About</a>
+        <a href="https://github.com/tarilka0gg">GitHub</a>
+      </nav>
+    </header>
+
+    <article class="article">
+      <p class="crumbs"><a href="../">Projects</a> /</p>
+      <h2>Portage Store</h2>
+      <p class="lead">A GTK4 application store for Portage, with a job queue, health checks and a CLI on the same core.</p>
+      <ul class="meta"><li>GPL-2.0</li><li>Rust · GTK4 · libadwaita</li><li><a href="https://github.com/tarilka0gg/portage-store">Source</a></li><li><a href="https://github.com/tarilka0gg/portage-store/releases">Releases</a></li></ul>
+      <ul class="meta live" data-repo="portage-store"></ul>
+
+      <h3>What it is</h3>
+      <p>Portage Store is a GTK4/libadwaita application store for Gentoo's Portage package manager, plus a terminal companion that shares the same core. You can search and install packages, watch builds stream live in a job queue, and get told about the things Gentoo expects you to remember to check yourself: security advisories, unread news, pending config updates, a stale tree and orphaned packages. It is written in Rust and ships in the <a href="../simple-linux/">Simple Linux</a> GUI image.</p>
+      <p>It works and I use it daily on my own system, but it is young. The privilege model is deliberately documented rather than hidden, and you should read that section below before installing.</p>
+
+<figure><img src="../../assets/img/projects/portage-store-explore.png" alt="The Explore landing page with category tiles and themed carousels" width="1300" height="840" decoding="async"><figcaption>The Explore page: category tiles above themed carousels of packages.</figcaption></figure>
+
+      <h3>Features</h3>
+      <h4>Finding things</h4>
+      <ul>
+        <li>A whole-tree in-memory index. The first search parses one full <code>eix --xml</code> dump (about 22k packages), roughly 600 ms once and about 2 ms per search after that. It is dropped and rebuilt only when a sync completes.</li>
+        <li>Name and description search, typo suggestions through a Levenshtein pass, and operators such as <code>cat:games-*</code>, <code>use:wayland</code>, <code>installed:true</code> and <code>@world</code>.</li>
+      </ul>
+      <h4>Installing and managing</h4>
+      <ul>
+        <li><strong>One job queue.</strong> Portage takes a global lock, so one <code>emerge</code> runs at a time and the rest wait, reorderable and cancellable. The queue can be exported as a POSIX shell script, one invocation per job, in run order.</li>
+        <li><strong>Automatic conflict resolution.</strong> A failed build that needs a USE flag, a keyword, a licence acceptance or a circular-dependency break is detected, explained and offered as apply-and-retry.</li>
+        <li><strong>Toolchain warning</strong> before an update that touches <code>gcc</code>, <code>glibc</code> or similar, because it commonly cascades into rebuilding everything linked against it.</li>
+        <li><strong>Live build output</strong> with a log drawer, an errors-only filter and searchable history; ETAs from <code>qlop</code>'s merge history.</li>
+        <li><strong>Resource throttling</strong> (on by default): <code>nice</code>/<code>ionice</code> and a RAM-aware <code>MAKEOPTS</code> cap. I added it after an unthrottled build OOM-killed unrelated processes during development. Night-only builds are opt-in.</li>
+        <li><strong>Sandbox builds</strong> for a package the live resolver will not touch (a hard mask, keyword mask or conflict): built in a disposable, throttled chroot with the live tree bind-mounted read-only. The result lands in the host's binary-package cache. <strong>Downgrades</strong> install from a locally cached binary package with <code>--usepkgonly</code>.</li>
+        <li><strong>Flatpak</strong> as a second, independent job lane, so a Flatpak update never waits behind a long <code>@world</code> rebuild.</li>
+      </ul>
+      <h4>Knowing what is wrong</h4>
+      <ul>
+        <li>GLSA security advisories through <code>glsa-check</code> with a one-click fix, unread Gentoo news, pending <code>CONFIG_PROTECT</code> updates with an inline diff reviewer, sync staleness, preserved-rebuild and orphaned packages.</li>
+        <li>A health dashboard combining these, with optional background checks and trend history.</li>
+      </ul>
+      <h4>Understanding a package</h4>
+      <ul>
+        <li>Dependency preview, download size, compile versus prebuilt, and reverse dependencies ("why is this installed?"), bounded on depth, fan-out and subprocess calls so one click on <code>glib</code> cannot spawn thousands.</li>
+        <li>A USE flag editor showing where each flag's current value comes from, plus man page, upstream AppStream metadata and Gentoo wiki and Bugzilla mentions where they exist.</li>
+      </ul>
+      <h4>Sharing a setup and configuring</h4>
+      <ul>
+        <li><strong>Presets</strong> (USE flags plus a starter package list, exportable as JSON) and <strong>profile bundles</strong> (<code>@world</code> plus every file under <code>/etc/portage</code>, with a diff shown before an import changes anything).</li>
+        <li>Pages for overlays, <code>make.conf</code>, <code>package.env</code>, kernel selection, profile switching and binary-package repositories. Every write under <code>/etc/portage</code> is committed to a git repo there, browsable and revertible from the GUI.</li>
+      </ul>
+
+      <div class="gallery">
+<figure><img src="../../assets/img/projects/portage-store-onboarding.png" alt="The first-run welcome with a system scan and starter bundles" width="1300" height="840" decoding="async"><figcaption>First run: what is installed, pending updates and orphans, plus optional starter bundles.</figcaption></figure><figure><img src="../../assets/img/projects/portage-store-search.png" alt="Search results for gimp" width="1300" height="840" decoding="async"><figcaption>Search: name and description matches, ranked; installed packages carry a check mark.</figcaption></figure><figure><img src="../../assets/img/projects/portage-store-detail.png" alt="A package page with upstream screenshots" width="1300" height="840" decoding="async"><figcaption>A package page with upstream screenshots and the Install / Remove button.</figcaption></figure><figure><img src="../../assets/img/projects/portage-store-use-flags.png" alt="The USE flag editor" width="1300" height="840" decoding="async"><figcaption>The USE flag editor: every flag with its description and how many other installed packages share it.</figcaption></figure><figure><img src="../../assets/img/projects/portage-store-updates.png" alt="The Updates tab" width="1300" height="840" decoding="async"><figcaption>The Updates tab, with Update All or one by one.</figcaption></figure>
+      </div>
+      <p>The screenshots were taken in the Simple Linux live session in a virtual machine.</p>
+
+      <h3>Architecture</h3>
+      <p>Three pieces, one direction of dependency. A GTK4 GUI (<code>portage-store</code>) and a clap-based CLI (<code>portage-store-cli</code>) both sit on a library with no GTK and no UI state, which in turn drives <code>eix</code>, <code>emerge</code>, <code>qlop</code>, <code>glsa-check</code>, <code>flatpak</code>, the privilege helper and the files under <code>/etc/portage</code> and <code>/var/db/pkg</code>.</p>
+      <ul>
+        <li><code>src/portage/</code>, <code>src/backend.rs</code>, <code>src/flatpak.rs</code> are the domain layer: parsing <code>eix --xml</code>, building <code>emerge</code> argv, reading <code>@world</code>, writing <code>package.use</code>. Plain functions returning plain structs, with no <code>gtk</code> or <code>adw</code> references. That is what made the CLI cheap to add.</li>
+        <li><code>src/ui/</code> is all the GTK, split by area, one file per dialog.</li>
+        <li><code>src/bin/portage-store-cli.rs</code> is the terminal front end; every subcommand is a thin wrapper over the functions the GUI calls.</li>
+      </ul>
+
+      <h3>The privilege model</h3>
+      <p>Everything privileged goes through one root-owned script, reachable by a passwordless <code>doas</code> rule scoped to exactly that path. This is a deliberate trade-off.</p>
+      <div class="note-box"><p>There is no password prompt. Nothing stands between "the app asked for this" and "it happened as root". In exchange, the attack surface is kept narrow: privileged calls never carry script text, only a subcommand name and arguments; the helper re-validates every path on the root side (after canonicalisation, against symlink-swap races) and uses an allowlist of runnable binaries; and every privileged call is logged by root to <code>/var/log/portage-store/priv-helper.log</code>, which the GUI has a page to read. Read <code>resources/priv-helper.sh</code> before installing; it is written to be read.</p></div>
+
+      <h3>Installing and using it</h3>
+      <p>It needs Rust 1.92 or newer, GTK 4.12+ and libadwaita 1.5+ to build, and at runtime <code>emerge</code>, <code>eix</code> (run <code>eix-update</code> first), <code>equery</code>, <code>qlop</code>, <code>eselect</code>, <code>doas</code> and optionally <code>flatpak</code>.</p>
+      <pre><code>git clone https://github.com/tarilka0gg/portage-store.git
+cd portage-store
+cargo build --release</code></pre>
+      <p>Then set up the privilege helper, which is required: without it anything that writes to the system fails.</p>
+      <pre><code>sudo mkdir -p /usr/libexec/portage-store
+sudo install -m 0755 -o root -g root resources/priv-helper.sh \
+    /usr/libexec/portage-store/priv-helper
+sudo install -m 0755 -o root -g root resources/sandbox-build.sh \
+    /usr/libexec/portage-store/sandbox-build.sh
+# then create the audit log under /var/log/portage-store (see the README)
+echo "permit nopass $USER cmd /usr/libexec/portage-store/priv-helper" \
+    | sudo tee -a /etc/doas.conf</code></pre>
+      <p>The CLI uses the same core:</p>
+      <pre><code>portage-store-cli search firefox
+portage-store-cli install app-misc/tmux --pretend
+portage-store-cli update-world --pretend
+portage-store-cli preset apply "Minimal Server"</code></pre>
+      <p>Mutating commands stream <code>emerge</code> output live and exit non-zero on failure. The in-app web preview is behind an off-by-default <code>webview</code> feature, because WebKitGTK is one of the slowest packages on Gentoo to build and the app does not need it.</p>
+
+      <h3>What was tested and what was not</h3>
+      <p><code>cargo test</code> runs 255 tests with no live system required. Tests never touch a real subprocess: parsers are fed captured fixtures, and the two places that interleave subprocess calls with logic (<code>priv_write.rs</code> and <code>reverse_deps.rs</code>) use a <code>CommandRunner</code> trait with a fake implementation, so the suite passes on a non-Gentoo machine. CI builds and tests on GitHub. Beyond that, I use the app daily on my own system.</p>
+      <div class="note-box"><p>Known limits: the Gentoo packaging in <code>packaging/</code> (an ebuild aimed at GURU) is a work in progress, not submitted and not yet correct; its README lists what has to be fixed first, including a mismatch between the ebuild's helper path and the compiled-in constant. The privilege helper is built around <code>doas</code>.</p></div>
+
+      <h3>Links</h3>
+      <p><a href="https://github.com/tarilka0gg/portage-store">Source</a> (GPL-2.0), <a href="https://github.com/tarilka0gg/portage-store/releases">releases</a>, <a href="https://github.com/tarilka0gg/portage-store/blob/main/CHANGELOG.md">changelog</a>. Related: <a href="../simple-linux/">Simple Linux</a>, which ships it, the <a href="../installer/">installer</a> that copies it to the target, and <a href="../ustan/">ustan</a>.</p>
+
+      <nav class="next" aria-label="More">
+        <a href="../installer/">← Installer</a>
+        <a href="../ustan/">ustan →</a>
+      </nav>
+    </article>
+
+    <footer class="lower">
+      <p>Linux developer · Gentoo · Rust</p>
+      <nav class="footer-links" aria-label="More">
+        <a href="../../">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="../../about/">About</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="../../assets/waves.js" defer></script>
+  <script src="../../assets/live.js" defer></script>
+</body>
+</html>

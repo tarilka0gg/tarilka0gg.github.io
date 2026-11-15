@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kconfig traps from building a kernel matrix — tarilka0gg</title>
+  <meta name="description" content="How kernel-matrix assembles kernel configs from fragments on a fixed seed, why verify-fragments.sh exists, and the Kconfig pitfalls that silently drop options.">
+  <meta name="theme-color" content="#090b10">
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body class="inner">
+  <div class="waves" aria-hidden="true"><canvas></canvas></div>
+
+  <main class="page">
+    <header class="site-header">
+      <a class="name" href="../../">tarilka0gg</a>
+      <nav aria-label="Site">
+        <a href="../../projects/">Projects</a>
+        <a href="../../notes/" aria-current="page">Notes</a>
+        <a href="../../updates/">Updates</a>
+        <a href="../../about/">About</a>
+        <a href="https://github.com/tarilka0gg">GitHub</a>
+      </nav>
+    </header>
+
+    <article class="article">
+      <p class="crumbs"><a href="../">Notes</a> /</p>
+      <h2>Kconfig traps from building a kernel matrix</h2>
+      <p class="lead">Fragments on a fixed seed, a verifier for options Kconfig silently drops, and the specific traps I found.</p>
+      <ul class="meta"><li>Aug–Sep 2026</li><li>Kconfig, kernel configs, Gentoo</li><li><a href="https://github.com/tarilka0gg/kernel-matrix">Source</a></li></ul>
+
+      <h3>The problem</h3>
+      <p>I needed a ready kernel image for every common hardware combination for my distribution, Simple Linux, without tuning each one by hand. <a href="https://github.com/tarilka0gg/kernel-matrix">kernel-matrix</a> is my answer: a config is a merge of small Kconfig fragments on top of a shared seed, one fragment per CPU, GPU, platform, laptop embedded controller (EC) and modem. This note is about the part that took the most time: Kconfig quietly throws away things you ask for, so the matrix needed a checker, and I collected a list of the specific ways it bites.</p>
+      <div class="note-box"><p>The fragment values are tuned for my own builds (Gentoo, the CachyOS 7.1.x kernel). Treat them as a starting point. The only build-and-boot check I have done is on my own Victus. I have no other hardware, so the kernels for other machines are checked as configs and builds, not as boots.</p></div>
+
+      <h3>How a config is assembled</h3>
+      <p>For one combination the order is a fixed seed, then two shared fragments, then one fragment per dimension:</p>
+<pre><code>seed/default.config
+  common/base.config, common/hardware.config
+    cpu/intel-raptorlake.config
+      gpu/nvidia.config
+        platform/laptop.config
+          ec/hp.config
+            modem/none.config</code></pre>
+      <p>The merge is the kernel's own <code>scripts/kconfig/merge_config.sh -m</code>, followed by <code>conf --olddefconfig</code>, which resolves dependencies. Later fragments override earlier ones, so order matters. For example <code>cpu/intel-raptorlake</code> disables <code>X86_NATIVE_CPU</code>, which the seed turns on. The scripts call <code>conf</code> directly with <code>KCONFIG_CONFIG</code> pointing at a target file, so generating a config never touches the <code>.config</code> of an already-built kernel tree and needs no <code>make O=...</code>.</p>
+      <div class="table-wrap"><table><thead><tr><th>Dimension</th><th>Fragments</th><th>What it does</th></tr></thead><tbody>
+        <tr><td>cpu</td><td>19</td><td>instruction set level and micro-architecture, from Sandy Bridge to Arrow Lake, AMD btver2 to Zen 5, plus generic x86-64 v2 and v3</td></tr>
+        <tr><td>gpu</td><td>7</td><td>the DRM driver for the vendor; hybrid laptops also get the iGPU driver</td></tr>
+        <tr><td>platform</td><td>5</td><td>laptop, desktop, handheld, server, and one model-specific layer for my Victus</td></tr>
+        <tr><td>ec</td><td>11</td><td>vendor laptop drivers, almost all as modules</td></tr>
+        <tr><td>modem</td><td>4</td><td>WWAN and modem drivers</td></tr>
+      </tbody></table></div>
+      <p>The full product with no filters is 23,408 combinations, and the repository holds 7,614 target files. In the end I dropped EC and modem as axes. Their fragments only set <code>=m</code>, and a <code>bzImage</code> build does not depend on modules, so dozens of EC and modem variants produced an identical <code>vmlinux</code> for every CPU, GPU and platform. Every target now simply enables <code>ec/all</code> and <code>modem/all</code>. That gives 678 compact targets, and a hand-weighted popularity score (weights I set by hand in a script, not market data) picks the top 304 to build.</p>
+
+      <h3>Why a fixed seed</h3>
+      <p>At first the seed was the <code>.config</code> of the machine doing the build. That was a mistake: anything my Victus does not have was silently off, and the state of the build tree leaked into every kernel. The seed is now a file in the repository, my 7.1.6 <code>trim11</code> config with 2,816 <code>=y</code> and <code>=m</code> options. If the file is missing, the script warns and falls back to the tree's <code>.config</code>.</p>
+      <p>The two shared fragments exist for a similar reason. <code>common/base.config</code> (14 options) holds hardware-independent things, such as filesystems and NVMe, and the crypto options that <code>iwd</code> needs. <code>common/hardware.config</code> (163 options) is a hardware baseline for any platform: touchpad buses, Intel Ethernet, Wi-Fi and Bluetooth, audio, SD reader, thermal. Almost all of it is <code>=m</code>, so the image barely grows. Without it, the generated kernels would have no drivers for hardware that my Victus does not have.</p>
+
+      <h3>The silent failure, and verify-fragments.sh</h3>
+      <p><code>merge_config.sh -m</code> plus <code>olddefconfig</code> silently drops any option whose dependencies cannot be satisfied: a disabled gate vendor, a missing <code>select</code>, a symbol that does not exist. Nothing is printed. You only find out when a driver is missing on real hardware, which for hardware I do not own means never. So <code>verify-fragments.sh</code> merges the fragments the same way the builder does, in a temporary directory, and compares what each fragment requested with what actually landed.</p>
+      <div class="table-wrap"><table><thead><tr><th>Status</th><th>Meaning</th><th>Result</th></tr></thead><tbody>
+        <tr><td><code>DEAD</code></td><td><code>=y</code> or <code>=m</code> was requested, and the result is <code>n</code> or the option does not exist</td><td>error, exit code 1</td></tr>
+        <tr><td><code>DOWNGRADED</code></td><td><code>=y</code> was requested, <code>=m</code> came out</td><td>warning</td></tr>
+        <tr><td><code>RESURRECTED</code></td><td><code>is not set</code> was requested, and <code>y</code> or <code>m</code> came out</td><td>info: another option's <code>select</code> pulled it in</td></tr>
+      </tbody></table></div>
+<pre><code>./verify-fragments.sh /usr/src/linux --target pop-001-intel-raptorlake-intel-laptop</code></pre>
+      <p>Some "dead" results are correct by design, and the script skips them. Laptop vendor EC options on the desktop and server platforms are unreachable, because those platforms have no <code>ACPI_BATTERY</code>, and so are <code>AMD_PMC</code> and <code>AMD_PMF</code> on those platforms. They are counted separately as skipped by design. The script ends with a summary line of requested options and the four counters, and exits non-zero on any <code>DEAD</code>. I run it after every edit of a fragment.</p>
+
+      <h3>Kconfig pitfalls I hit</h3>
+      <ul>
+        <li><strong>A <code>bool</code> set to <code>=m</code> becomes <code>n</code> without a word.</strong> <code>BRCMFMAC_PCIE</code> and <code>PINCTRL_AMD</code> were my examples. The verifier shows them as <code>DEAD</code>.</li>
+        <li><strong>Gate menus must be enabled explicitly.</strong> Options under <code>X86_PLATFORM_DRIVERS_DELL</code> and <code>_HP</code>, <code>CRYPTO_HW</code>, <code>WWAN</code>, <code>WLAN_VENDOR_*</code> and <code>NET_VENDOR_*</code> do nothing unless the gate is on. I added the vendor gates to the <code>ec/*</code> fragments and <code>WWAN</code> to the modem fragments.</li>
+        <li><strong>Names are not what you guess.</strong> It is <code>BT</code>, not <code>BLUETOOTH</code>. USB Ethernet is <code>USB_NET_CDCETHER</code>. The Intel touch host controller is <code>INTEL_QUICKI2C</code>. Platform profiles are <code>ACPI_PLATFORM_PROFILE</code>.</li>
+        <li><strong>Symbol case matters in <code>scripts/config</code>.</strong> Many "dead" options that <code>make olddefconfig</code> reverts turned out to be a case mistake.</li>
+        <li><strong>The generic kernel must carry AMD support too.</strong> The AMD pin controller, PSP, IOMMU and PMF bits live in <code>cpu/amd-*</code> and also in <code>cpu/generic-x86-64-*</code>, because a generic image runs on AMD machines as well.</li>
+        <li><strong>An Optimus laptop's panel is wired to the integrated GPU.</strong> So <code>gpu/nvidia</code> and <code>gpu/nouveau</code> also carry the iGPU drivers. The iGPU drives the internal display.</li>
+        <li><strong>The seed's options may not exist in another tree.</strong> My seed comes from the CachyOS tree, which has options such as BORE that vanilla Linux does not. On a vanilla tree <code>olddefconfig</code> drops them silently, so a vanilla build is not bit-for-bit the same kernel.</li>
+        <li><strong>One option from a real bug:</strong> the touchpad of my Victus sits on an Intel Serial IO I2C bus and does not work without <code>MFD_INTEL_LPSS_PCI</code>. I added it to the matrix, and on my own 7.1.8 kernel it is still disabled.</li>
+      </ul>
+
+      <h3>Build notes that came out of it</h3>
+      <ul>
+        <li>The build makes a reflinked copy of the tree for each combination. In-tree builds refuse <code>make O=...</code> ("source tree is not clean") and <code>make mrproper</code> would destroy the working kernel.</li>
+        <li>It builds <code>bzImage</code> only, with no modules. Linking thousands of <code>=m</code> files one by one is not cached by sccache and takes longer than the compiling.</li>
+        <li><code>mold</code> does not work: the kernel's <code>scripts/ld-version.sh</code> only recognises GNU ld and LLD. The script takes <code>ld.lld</code> and falls back to <code>ld.bfd</code>.</li>
+        <li>GCC 15.2.1 from my overlay does not emit <code>ENDBR64</code> for a few library functions called through function pointers, and <code>objtool</code> with <code>CONFIG_X86_KERNEL_IBT=y</code> treats that as a fatal error. I reproduced it deterministically on one target. GCC failed every time and clang 22 built clean, so the builder falls back to clang.</li>
+        <li>Building several targets through one GNU Make jobserver at <code>-j24</code> beat running them as separate processes: one target alone took about 54 s, two separate processes about 80 s, and through the jobserver 46 s per target for two, 38 s for four and 14 s for six.</li>
+      </ul>
+
+      <h3>What was built, and what was not</h3>
+      <p>A batch build on 13 and 14 August 2026 produced 304 <code>bzImage</code> files of about 9.3 MB each, all with release string <code>7.1.6-cachyos-trim11-tuned</code>, with 0 failures and 2 warnings in the log. The nvidia targets also get a small devel archive (38 of them), because Gentoo's <code>nvidia-drivers</code> will not build without one. While fixing the fragments on 19 September, <code>verify-fragments.sh</code> reported <code>DEAD=0</code> on all 304 popular targets. That is a config-resolution check only.</p>
+      <p>Ten of the kernels (generic v2 and v3, and Raptor Lake, by GPU vendor and laptop or desktop) are published for the Simple Linux installer, which also has an optional mode that builds the kernel on the new system. I verified that mode once, in a VM, for one desktop target: it built and the system booted.</p>
+
+      <h3>What I would do differently, and open questions</h3>
+      <ul>
+        <li>The 304 builds predate the 19 September fixes (new <code>common/hardware.config</code>, fixed seed, vendor gates, <code>WWAN</code>, AMD bits, iGPU drivers). Only the generic kernels for the installer were rebuilt, so the full set was not.</li>
+        <li>I have not rerun <code>verify-fragments.sh</code> in the repository since the fixes, and I have not compiled the new options.</li>
+        <li>I cannot boot anything except the Victus. A check that a driver is present in the config is not a check that the hardware works.</li>
+        <li>The popularity weights are my guesses. I would replace them with real data.</li>
+        <li>I should have fixed the seed and written the verifier from the start, instead of discovering the leaked build state and the dropped options later.</li>
+      </ul>
+
+      <nav class="next" aria-label="More">
+        <a href="../autofdo-propeller-kernel/">← AutoFDO and Propeller kernel</a>
+        <a href="../gpu-offset-wayland/">GPU clock offset on Wayland →</a>
+      </nav>
+    </article>
+
+    <footer class="lower">
+      <p>Linux developer · Gentoo · Rust</p>
+      <nav class="footer-links" aria-label="More">
+        <a href="../../">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="../../about/">About</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="../../assets/waves.js" defer></script>
+</body>
+</html>

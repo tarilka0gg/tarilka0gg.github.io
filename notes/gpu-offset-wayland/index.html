@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Applying an NVIDIA GPU clock offset on Wayland — tarilka0gg</title>
+  <meta name="description" content="How I apply a core and memory clock offset to an NVIDIA laptop GPU at boot on a Wayland-only system, using a throwaway headless Xorg with Coolbits.">
+  <meta name="theme-color" content="#090b10">
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body class="inner">
+  <div class="waves" aria-hidden="true"><canvas></canvas></div>
+
+  <main class="page">
+    <header class="site-header">
+      <a class="name" href="../../">tarilka0gg</a>
+      <nav aria-label="Site">
+        <a href="../../projects/">Projects</a>
+        <a href="../../notes/" aria-current="page">Notes</a>
+        <a href="../../updates/">Updates</a>
+        <a href="../../about/">About</a>
+        <a href="https://github.com/tarilka0gg">GitHub</a>
+      </nav>
+    </header>
+
+    <article class="article">
+      <p class="crumbs"><a href="../">Notes</a> /</p>
+      <h2>Applying an NVIDIA GPU clock offset on Wayland</h2>
+      <p class="lead">NV-CONTROL needs an X server. On a Wayland-only machine, I start one for a second at boot and shut it down.</p>
+      <ul class="meta"><li>Sep–Oct 2026</li><li>NVIDIA, Coolbits, Wayland, OpenRC</li><li><a href="https://github.com/tarilka0gg/gpu-undervolt">Source</a></li></ul>
+
+      <div class="note-box"><p>Clock offsets change the voltage/frequency curve of the GPU. The values here (core +125 MHz, memory +250 MHz) are for my RTX 4070 Laptop GPU and my silicon only. Another chip may be unstable at them. Running the script repeatedly by hand under heavy GPU load once caused a real GPU fault on my machine (details below). Start with small offsets and test on your own hardware.</p></div>
+
+      <h3>The problem</h3>
+      <p>I run a Wayland-only desktop (niri) on Gentoo with OpenRC. The laptop has an NVIDIA RTX 4070 Laptop GPU, and I wanted a tuned clock offset applied at every boot: core +125 MHz and memory +250 MHz, with no clock lock. The GPU still boosts freely. It runs on a raised voltage/frequency curve, so it reaches the same clocks at lower voltage. I also wanted <code>GPUPowerMizerMode=1</code> (prefer maximum performance) set in the same pass.</p>
+      <p>With the proprietary driver on Linux, the offsets can only be reached one way.</p>
+
+      <h3>Why it is awkward</h3>
+      <p>The attributes are <code>GPUGraphicsClockOffsetAllPerformanceLevels</code> and <code>GPUMemoryTransferRateOffsetAllPerformanceLevels</code>. They are exposed only through <code>nvidia-settings</code>, which talks NV-CONTROL to a real X server that has the NVIDIA driver loaded, and only if the X server was started with Coolbits enabled. The alternatives do not work:</p>
+      <ul>
+        <li>NVML, the library behind <code>nvidia-smi</code>, has no public API for these offsets.</li>
+        <li>XWayland does not load the real NVIDIA driver, so it cannot expose NV-CONTROL either.</li>
+        <li>On a machine without any X server there is nothing for <code>nvidia-settings</code> to talk to.</li>
+      </ul>
+      <p>So the script starts its own X server, applies the offsets, and shuts it down again.</p>
+
+      <h3>The method</h3>
+      <p>The solution has three small pieces. The first is an Xorg config that turns Coolbits on. Without <code>Coolbits</code> the <code>nvidia-settings</code> attributes silently do not exist, so this file is what the whole thing depends on. It goes in <code>/etc/X11/xorg.conf.d/20-nvidia.conf</code>:</p>
+<pre><code>Section "Device"
+    Identifier "NVIDIA Card"
+    Driver "nvidia"
+    Option "Coolbits" "28"
+EndSection</code></pre>
+      <p>This needs <code>x11-base/xorg-server</code> installed, even though the system is otherwise Wayland-only.</p>
+      <p>The second piece is the script, <code>gpu-undervolt-apply</code>. It must run as root and has the two offsets as variables at the top. Its core, with the checks trimmed:</p>
+<pre><code>CORE_OFFSET=125
+MEM_OFFSET=250
+VT="vt7"
+
+nvidia-smi -pm 1 &gt;/dev/null          # persistence mode
+ORIG_VT="$(fgconsole 2&gt;/dev/null || echo 1)"
+
+coproc XORGCO { exec Xorg -displayfd 1 "$VT" -config "$XCONF" \
+                -logfile "$XLOG" -ac 2&gt;/dev/null; }
+read -r -u "${XORGCO[0]}" DNUM        # Xorg writes its display number here
+DISP=":${DNUM}"
+
+DISPLAY="$DISP" nvidia-settings -a "[gpu:0]/GPUGraphicsClockOffsetAllPerformanceLevels=${CORE_OFFSET}"
+DISPLAY="$DISP" nvidia-settings -a "[gpu:0]/GPUMemoryTransferRateOffsetAllPerformanceLevels=${MEM_OFFSET}"
+DISPLAY="$DISP" nvidia-settings -a "[gpu:0]/GPUPowerMizerMode=1"</code></pre>
+      <p>Three details make it dependable.</p>
+      <ul>
+        <li><strong><code>-displayfd</code>.</strong> Xorg picks a free display number itself and reports readiness by writing the number to a pipe, so there is no sleep-and-poll loop and no fixed <code>:1</code> that could already be taken.</li>
+        <li><strong>A free VT.</strong> Xorg starts on its own virtual terminal (<code>vt7</code>).</li>
+        <li><strong>A cleanup trap.</strong> On exit, including failure or interrupt, the script kills the server and switches back to the original VT.</li>
+      </ul>
+      <p>The third piece is an OpenRC service, <code>gpu-undervolt-apply.initd</code>. It belongs in the <strong>boot</strong> runlevel (<code>rc-update add gpu-undervolt-apply boot</code>), and its dependencies say <code>need modules</code>, <code>after modules</code> and <code>before display-manager</code>. That ordering is the point: it runs before any getty or login starts the Wayland session, so the VT switch happens while nothing is on screen.</p>
+<pre><code>depend() {
+	need modules
+	after modules
+	before display-manager
+}</code></pre>
+      <p>The service applies the offsets again at each boot. The repository also has a release tarball with install and uninstall scripts and the service files.</p>
+
+      <h3>Known limitation: both monitors blink on a manual run</h3>
+      <p>Starting the second Xorg does a real VT switch, which pauses the whole Wayland session, including outputs on the integrated GPU, not only the NVIDIA-attached one. About 1.5 seconds of it is Xorg doing a real modeset and DisplayPort link training on the connected external monitor, even though I only want NV-CONTROL. I tried <code>Option "UseDisplayDevice" "none"</code> together with <code>AllowEmptyInitialConfiguration</code>, and neither avoided it. My guess is that <code>nvidia-drm.modeset=1</code> bypasses that older option. I accepted it: at boot nothing is on screen yet, so I only see it when I re-run the script by hand to test new values.</p>
+
+      <h3>Care when re-running by hand</h3>
+      <p>Running the script repeatedly in quick succession while a game was under heavy load caused a real <code>Xid 109: CTX SWITCH TIMEOUT</code> GPU fault, and once left an output stuck disabled (<code>nvidia-modeset: Invalid request parameters</code>) until I rebooted. Before testing new values, check that the GPU is not busy and that it has free memory:</p>
+<pre><code>nvidia-smi --query-gpu=memory.free</code></pre>
+      <p>With little free VRAM the headless Xorg fails outright with "Failed to allocate primary buffer: out of memory". The script catches that case and prints a hint that points to <code>/tmp/xorg-undervolt-apply.log</code>.</p>
+
+      <h3>How I tested it</h3>
+      <p>I tested the script mostly by running it by hand while trying values, which is where the two problems above came from. I did not record a benchmark or a stability test for this offset, so I make no claim about the size of the gain. The reasoning is only the usual one for a raised curve: the same clocks at a lower voltage means less heat. The lab data for the rest of this machine's tuning is in <a href="../bios-unlock-undervolt/">the first note</a>, and the power scripts are in <a href="https://github.com/tarilka0gg/power-scripts">power-scripts</a>.</p>
+
+      <h3>What I would do differently, and open questions</h3>
+      <ul>
+        <li>The VT switch is the ugly part. It is acceptable at boot and awkward for tuning. A route that does not need an X server would be better. I know of none through NVML.</li>
+        <li>Without a measurement I cannot say where the stability limit of my chip is. A proper search would need a test on the GPU, like the CPU one in the first note, with offsets stepped up until it fails.</li>
+        <li>The service runs the script from my home directory, and the offsets are constants in the script. Both are fine for one machine and wrong for a packaged tool.</li>
+      </ul>
+
+      <nav class="next" aria-label="More">
+        <a href="../kconfig-traps/">← Kconfig traps</a>
+        <span></span>
+      </nav>
+    </article>
+
+    <footer class="lower">
+      <p>Linux developer · Gentoo · Rust</p>
+      <nav class="footer-links" aria-label="More">
+        <a href="../../">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="../../about/">About</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="../../assets/waves.js" defer></script>
+</body>
+</html>

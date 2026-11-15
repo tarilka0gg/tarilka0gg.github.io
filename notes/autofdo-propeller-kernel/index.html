@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Building the kernel with AutoFDO and Propeller — tarilka0gg</title>
+  <meta name="description" content="The chain I used to build a Linux 7.1.8 kernel with Clang, an AutoFDO profile and a Propeller profile, and the BB address map version trap that needs clang 19.">
+  <meta name="theme-color" content="#090b10">
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body class="inner">
+  <div class="waves" aria-hidden="true"><canvas></canvas></div>
+
+  <main class="page">
+    <header class="site-header">
+      <a class="name" href="../../">tarilka0gg</a>
+      <nav aria-label="Site">
+        <a href="../../projects/">Projects</a>
+        <a href="../../notes/" aria-current="page">Notes</a>
+        <a href="../../updates/">Updates</a>
+        <a href="../../about/">About</a>
+        <a href="https://github.com/tarilka0gg">GitHub</a>
+      </nav>
+    </header>
+
+    <article class="article">
+      <p class="crumbs"><a href="../">Notes</a> /</p>
+      <h2>Building the kernel with AutoFDO and Propeller</h2>
+      <p class="lead">Profile-guided kernel layout on a laptop: what to record, which tool reads it, and why clang 22 breaks the chain.</p>
+      <ul class="meta"><li>Sep 2026</li><li>Clang, AutoFDO, Propeller, perf</li><li><a href="https://github.com/tarilka0gg/system-lab">Source</a></li></ul>
+
+      <h3>The goal</h3>
+      <p>I build my own kernel for the Victus (7.1.8 with the CachyOS patches, BORE scheduler, Clang). After the plain Clang build, the next step with the most expected gain for a gaming laptop is profile-guided layout: AutoFDO tells the compiler which branches are hot, and Propeller then reorders functions and basic blocks in the final link to keep hot code together. The chain has a version trap that is easy to miss. This note is the chain as I ran it in September 2026.</p>
+
+      <h3>The chain</h3>
+      <ol>
+        <li><strong>AutoFDO profile.</strong> Record the kernel running a realistic workload, convert it to a <code>.afdo</code> file.</li>
+        <li><strong>P1 build.</strong> Build a kernel with the AutoFDO profile applied and Propeller-capable (<code>CONFIG_AUTOFDO_CLANG=y</code>, <code>CONFIG_PROPELLER_CLANG=y</code>). Keep its unstripped <code>vmlinux</code>, and boot it.</li>
+        <li><strong>Propeller profile.</strong> Record the booted P1 kernel with a different perf event and convert with <code>create_llvm_prof</code>.</li>
+        <li><strong>Final build.</strong> Rebuild with both profiles and link with <code>ld.lld</code>.</li>
+      </ol>
+
+      <h3>Step 1: the AutoFDO profile</h3>
+      <p>I recorded the whole system with a branch stack while the kernel compiled:</p>
+<pre><code>perf record -b -e cycles:kp -a -N -c 500009 \
+      -o kernel-compilation.data</code></pre>
+      <p>I stopped it with SIGINT when the workload ended. It took three attempts. The first (19 GB) had no <code>-b</code>, so no branch stack, and was unusable. The second (26 GB) used the same command as the third; I did not record why I switched. The third, 62,270.6 MiB, was the one I used. I converted it with <code>llvm-profgen</code> from LLVM 22:</p>
+<pre><code>llvm-profgen --kernel --perfdata=kernel-compilation.data \
+      --binary=/usr/src/linux/vmlinux -o kernel-compilation.afdo</code></pre>
+      <p>The conversion took about 3.4 hours, needed a <code>TMPDIR</code> outside <code>/</code> because the temporary files are large, and produced a 2,921,700-byte profile. The kernel takes it through <code>CLANG_AUTOFDO_PROFILE</code>. That is the variable name; <code>AUTOFDO_PROFILE_foo.o := y</code> in the kernel docs is a different, per-object switch.</p>
+      <div class="note-box"><p>Keep the right <code>vmlinux</code>. My 62 GB recording had no BUILD_ID section in its header (likely because the recording ended with a signal), and by the time I wrote this down the <code>vmlinux</code> it was recorded on had been overwritten by the next build. The timeline shows the profile came from build #3 while the only <code>vmlinux</code> on disk was #4, so I can no longer re-derive the profile from the raw data. To redo it: boot the kernel you want a profile for, save its <code>vmlinux</code>, check <code>readelf -n vmlinux | grep 'Build ID'</code>, record, and convert against that same file.</p></div>
+
+      <h3>Step 2: the P1 build, and the trap</h3>
+      <p>The P1 build is a normal Clang build with the AutoFDO profile. I ran it with clang 19, and this is the important part.</p>
+<pre><code>make CC=clang LLVM=1 LLVM_IAS=1 LD=ld.bfd HOSTLD=ld.bfd \
+     CLANG_AUTOFDO_PROFILE=/path/to/kernel-compilation.afdo bzImage</code></pre>
+      <p>Propeller needs the compiler to emit a basic-block address map (<code>SHT_LLVM_BB_ADDR_MAP</code>) into <code>vmlinux</code>, and the profile converter reads it. The converter is <code>create_llvm_prof</code> from google/autofdo, and it only understands map versions up to 2. Clang 19 writes version 2. Clang 22 writes version 5, and the tool refuses it:</p>
+<pre><code>unsupported SHT_LLVM_BB_ADDR_MAP version: 5</code></pre>
+      <p>My system compiler is clang 22 and my AutoFDO kernel was built with it, so that kernel's <code>vmlinux</code> could not be used for Propeller. The fix is to build the P1 and final kernels with clang 19, by putting it first on the PATH (<code>PATH=/usr/lib/llvm/19/bin:/usr/lib/llvm/22/bin:$PATH</code>). I did not wait for a newer converter. Whoever tries this with a newer toolchain should check the map version first.</p>
+      <p>I built <code>create_llvm_prof</code> myself from the git repository, with its vendored LLVM. It would not build as is: the first four attempts failed (the third, for example, on errors in the bundled abseil headers). I patched it to build against the system abseil instead of the vendored copy, and the fifth build linked.</p>
+      <p>I keep <code>vmlinux-p1</code> (the unstripped file, about 249 MB) and boot the P1 kernel. This matters because the next step checks the build-id of the binary against the profile.</p>
+
+      <h3>Step 3: the Propeller profile</h3>
+      <p>The Propeller profile has to be recorded on the booted P1 kernel only. <code>create_llvm_prof</code> compares the build-id in <code>vmlinux-p1</code> with the one in the recording and refuses anything else. The event is also different from AutoFDO: Propeller wants taken branches, not cycles.</p>
+<pre><code>perf record -e BR_INST_RETIRED.NEAR_TAKEN:k -a -N -b -c 500009 \
+      -o propeller.data -- sleep 1800</code></pre>
+      <p>Thirty minutes of system-wide recording produced a 820.7 MB file (about 40 MB per minute). Converting it was fast:</p>
+<pre><code>create_llvm_prof --binary=vmlinux-p1 --profile=propeller.data \
+      --format=propeller --propeller_output_module_name \
+      --out=propeller_cc_profile.txt \
+      --propeller_symorder=propeller_ld_profile.txt</code></pre>
+      <p>The conversion took 23 seconds. It writes two text files: a compiler profile (<code>cc_profile</code>), which lists hot functions and basic-block ids per source file, and a linker profile (<code>ld_profile</code>), which is a symbol order. They are 354 KB and 175 KB. The raw recording is not worth keeping once they exist.</p>
+
+      <h3>Step 4: the final build and the linker</h3>
+      <p>The final build is the same command with two additions: the Propeller profile prefix and a different linker.</p>
+<pre><code>make CC=clang LLVM=1 LLVM_IAS=1 LD=ld.lld HOSTLD=ld.bfd \
+     CLANG_AUTOFDO_PROFILE=/path/to/kernel-compilation.afdo \
+     CLANG_PROPELLER_PROFILE_PREFIX=/path/to/propeller bzImage</code></pre>
+      <p>I link with <code>ld.lld</code>: the linker profile is applied through <code>--symbol-ordering-file</code>, which only lld supports, so <code>ld.bfd</code>, which I use for the P1 build, cannot be the final linker. There is no lld 19 on my system, so the final link used lld from LLVM 22 even though the objects were compiled with clang 19. That worked.</p>
+      <p>I reused the modules from the earlier AutoFDO kernel build (same configuration, <code>MODVERSIONS</code> disabled, same version string), which let the proprietary NVIDIA module load without a rebuild.</p>
+      <p>Since then I have rebuilt the kernel a few more times for config changes (kexec, touchpad and KVM options, going by my build log names).</p>
+
+      <h3>Results</h3>
+      <p>The honest answer is that I have no clean number. The only evidence I have is that I noticed steadier FPS in games on the Propeller kernel than before. That is a subjective report, not a measurement: I did not run a controlled A/B. I ran benchmarks on the Propeller kernel (7-Zip, Blender and y-cruncher results are in my work folder), but with no like-for-like baseline I will not quote them as a gain.</p>
+      <p>Measurable facts I do have: the AutoFDO profile was about 2.8 MB from a 62 GB recording, the Propeller recording was 0.8 GB from half an hour of load, and its conversion takes seconds. After the P1 boot, the Propeller cycle is about 30 minutes of recording plus one rebuild.</p>
+
+      <h3>What I would do differently, and open questions</h3>
+      <ul>
+        <li>Save the <code>vmlinux</code> of every kernel I record on, along with its build-id, before building the next one.</li>
+        <li>Record AutoFDO on a kernel that I also keep; mine cannot be reproduced.</li>
+        <li>Pin the toolchain versions in the build script. The clang 19 requirement lives only in my notes and in the PATH I type.</li>
+        <li>Measure properly. A fair comparison needs the same config, the same workload, the plain Clang build, the AutoFDO build and the Propeller build, repeated several times.</li>
+        <li>I do not know whether a newer <code>create_llvm_prof</code> reads map version 5. Until then, the compiler and the converter have to stay on versions that agree.</li>
+      </ul>
+
+      <nav class="next" aria-label="More">
+        <a href="../bios-unlock-undervolt/">← BIOS unlock and undervolt</a>
+        <a href="../kconfig-traps/">Kconfig traps →</a>
+      </nav>
+    </article>
+
+    <footer class="lower">
+      <p>Linux developer · Gentoo · Rust</p>
+      <nav class="footer-links" aria-label="More">
+        <a href="../../">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="../../about/">About</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="../../assets/waves.js" defer></script>
+</body>
+</html>

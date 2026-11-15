@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Installer — tarilka0gg — tarilka0gg</title>
+  <meta name="description" content="The Rust installer and image build scripts behind Simple Linux: pipeline, features, headless use and what has been tested.">
+  <meta name="theme-color" content="#090b10">
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body class="inner">
+  <div class="waves" aria-hidden="true"><canvas></canvas></div>
+
+  <main class="page">
+    <header class="site-header">
+      <a class="name" href="../../">tarilka0gg</a>
+      <nav aria-label="Site">
+        <a href="../../projects/">Projects</a>
+        <a href="../../notes/">Notes</a>
+        <a href="../../updates/">Updates</a>
+        <a href="../../about/">About</a>
+        <a href="https://github.com/tarilka0gg">GitHub</a>
+      </nav>
+    </header>
+
+    <article class="article">
+      <p class="crumbs"><a href="../">Projects</a> /</p>
+      <h2>Installer</h2>
+      <p class="lead">A Rust installer for Gentoo: sixteen resumable phases, a hardware-matched kernel and binary packages, with a text and a GTK4 front end.</p>
+      <ul class="meta"><li>GPL-2.0-or-later</li><li>Rust · GTK4 · libadwaita</li><li><a href="https://github.com/tarilka0gg/gentoo-installer">Source</a></li></ul>
+      <ul class="meta live" data-repo="gentoo-installer"></ul>
+
+      <h3>What it is</h3>
+      <p>This is the installer and the image build scripts behind <a href="../simple-linux/">Simple Linux</a>. It installs Gentoo (OpenRC, Limine) onto a disk from binary packages, with a kernel picked for the machine's hardware. In a QEMU VM with KVM that takes about ten minutes when it merges the packages one by one, and under two minutes for the default desktop, which comes as one archive. Those times are VM measurements.</p>
+      <p>It has two front ends over one core: a ratatui text installer (which also runs <code>--headless</code>) and a GTK4 + libadwaita wizard. It is written in Rust.</p>
+
+<figure><img src="../../assets/img/projects/installer-welcome.png" alt="The installer welcome page" width="640" height="700" decoding="async"><figcaption>The first screen: disk, kernel and boot are decided for you.</figcaption></figure>
+
+      <h3>Architecture</h3>
+      <ul>
+        <li><code>installer-core</code> does everything that actually happens, with no UI code. Both front ends only call into it.</li>
+        <li><code>installer-cli</code> is the text installer and headless mode, used by the minimal image.</li>
+        <li><code>installer-gui</code> is the wizard used by the GUI image (niri + Noctalia).</li>
+        <li><code>profiles/</code>, <code>slp-profiles/</code> and <code>slp/</code> hold the flavors and software groups as data, the library that reads them, and the <code>slp</code> command.</li>
+        <li><code>iso/</code> builds the live images, the offline payload and the release.</li>
+      </ul>
+      <p>The TUI, the GUI and <code>--headless</code> run the same 16 phases: preflight, partition, format, mount, deploy, portage config, fstab, locale, users, kernel build (optional), GPU, desktop, packages, bootloader, post hooks, finalize. A journal at <code>/run/installer/journal.json</code> lets a failed install be resumed: destructive phases are skipped on the journal alone, the others only if their result is still on the disk. Every shell-out goes through a <code>CommandRunner</code>, so the logic is unit-tested without root or a disk.</p>
+
+      <h3>Key features</h3>
+      <ul>
+        <li><strong>Hardware-matched kernel.</strong> CPU microarchitecture, GPU vendor(s) and laptop or desktop are detected, and a prebuilt kernel is picked from the store, falling back step by step to a generic x86-64 v2/v3 build. Nothing is compiled and <code>emerge</code> is not used for the kernel: deployment is a file copy plus its modules. An unrecognised CPU gets the generic build rather than a guess that could use instructions it lacks.</li>
+        <li><strong>Optional kernel built on the machine</strong> (off by default). When the store has no kernel for exactly this hardware, it can fetch Linux 7.1.8 and the <a href="https://github.com/tarilka0gg/kernel-matrix">kernel-matrix</a> and build on the new system. A failure keeps the ready-made kernel.</li>
+        <li><strong>Install next to other systems.</strong> On a GPT disk it can use free space and keep what is there. An existing EFI system partition is mounted and never formatted, and other systems found on it get chainload entries in <code>limine.conf</code>. Shrinking is left to GParted.</li>
+        <li><strong>Binary packages.</strong> From Gentoo's binhost and the project's own, used only if the USE flags match, so what the installer asks for is pinned in <code>installer-core/assets/binhost/</code> and the binhost is built from the same files. A full install of every software group merged 263 packages in a VM and compiled none, in about 15 minutes. The default groups take about 10 minutes (261 packages; 749 s before nine packages were added to the binhost, 642 s after).</li>
+        <li><strong>The default desktop as one archive.</strong> For the default groups the installer unpacks <code>software-desktop-default.tar.zst</code> instead of merging: 96 s online (archive served from the host) and 52 s offline, in a VM.</li>
+        <li><strong>Offline install.</strong> The <code>*-offline.iso</code> images carry the stage3, kernels, packages, Portage tree and configs. The installer serves them on <code>127.0.0.1</code> and points every URL at it, then restores the public URLs at the end so the installed system updates normally.</li>
+        <li><strong>Keyboard, time zone, graphics.</strong> Up to four layouts with a switch key; a time zone page that searches cities, capitals and countries; graphics page that names every card and lets you choose the one the desktop is drawn on.</li>
+        <li><strong>Every decision is a <code>git log</code>.</strong> <code>/etc/portage</code> of the target is a git repository.</li>
+      </ul>
+
+      <div class="gallery">
+<figure><img src="../../assets/img/projects/installer-desktop.png" alt="Desktop page: choose a compositor" width="640" height="700" decoding="async"><figcaption>Pick a compositor (niri, Hyprland, Sway, Labwc, MangoWC, dwl); Noctalia comes with any of them.</figcaption></figure><figure><img src="../../assets/img/projects/installer-graphics.png" alt="Graphics driver page" width="640" height="700" decoding="async"><figcaption>The cards found; the choice picks the kernel build and, for NVIDIA, whether the proprietary driver is compiled.</figcaption></figure><figure><img src="../../assets/img/projects/installer-software.png" alt="Software page with a group opened" width="640" height="700" decoding="async"><figcaption>Software groups. Every program has a sentence and many have a screenshot.</figcaption></figure><figure><img src="../../assets/img/projects/installer-options.png" alt="Build options page" width="640" height="700" decoding="async"><figcaption>Build options: -O3, everything from source, a kernel for this computer. All off by default.</figcaption></figure><figure><img src="../../assets/img/projects/installer-disk.png" alt="Disk page" width="640" height="700" decoding="async"><figcaption>Erase the whole disk or install next to what is there; disks that are too small are greyed out.</figcaption></figure><figure><img src="../../assets/img/projects/installer-installing.png" alt="Installing page with progress bar and live log" width="640" height="700" decoding="async"><figcaption>Sixteen phases with a progress bar and a live log. This is the simulated run.</figcaption></figure>
+      </div>
+
+      <h3>Design choices</h3>
+      <ul>
+        <li><strong>OpenRC only, no systemd.</strong> Networking is <code>iwd</code> over D-Bus, not NetworkManager.</li>
+        <li><strong>Limine only</strong> for the bootloader (BIOS and UEFI), with optional Secure Boot: a key is made for this machine, Limine is signed and the config and kernel pinned by hash. Off by default.</li>
+        <li><strong>Automatic partitioning:</strong> 512 MiB ESP, swap 1:1 with RAM clamped to 8 to 96 GiB, then <code>/</code> and <code>/home</code> as separate partitions. btrfs with subvolumes (<code>@</code>, <code>@var</code>, <code>@log</code>, <code>@home</code>) by default, ext4 optional. No LUKS yet.</li>
+        <li><strong>Accounts:</strong> root stays locked; the first user is in <code>wheel</code> and gets <code>doas</code>.</li>
+        <li><strong>Stage3:</strong> Gentoo's official <code>amd64-openrc</code> or the project's slimmer one. A digest mismatch aborts before anything is unpacked.</li>
+      </ul>
+
+      <h3>Flavors, software groups and slp</h3>
+      <p>What gets installed is data in <code>profiles/</code>, compiled into the installer. A system is one flavor (<code>minimal</code>, <code>desktop</code>, <code>workstation</code>) plus mix-ins, which are the software groups on the Software page: Wi-Fi, terminal, browser, development, media, office, gaming tools, Steam, Minecraft and others. Each group says which packages, USE flags, licences and services it needs. The same data drives the <code>slp</code> command on an installed system (<code>slp show | list | info | flavor | mix-in | apply | install | rebuild</code>, in the style of Funtoo's <code>epro</code>). Programs Portage does not have come from the profiles' own overlay <code>slp-local</code>; Steam comes from <code>steam-overlay</code>. Groups from these overlays are not on the offline images and not in the binhost.</p>
+
+      <h3>Using it</h3>
+      <p>Most people will use it through the <a href="../simple-linux/">Simple Linux</a> images. To build and test the code:</p>
+      <pre><code>cargo build --release                 # installer-gui needs GTK4 + libadwaita
+cargo fmt --check &amp;&amp; cargo test       # about 195 core tests and 17 CLI tests</code></pre>
+      <p>A headless install reads environment variables and prints the same event stream the GUI shows. The target disk is confirmed by repeating its path:</p>
+      <pre><code>GENTOO_INSTALLER_DISK=/dev/sdX GENTOO_INSTALLER_CONFIRM_ERASE=/dev/sdX \
+GENTOO_INSTALLER_USERNAME=me GENTOO_INSTALLER_PASSWORD=... \
+installer-cli --headless</code></pre>
+      <p><code>--resume</code> continues the unfinished install this live session remembers. <code>GENTOO_INSTALLER_SIMULATE=1</code> gives a click-through with no disk, network or chroot, and <code>GENTOO_INSTALLER_GUI_PAGE=keyboard|timezone|desktop|gpu|disk|software|optimization|network installer-gui</code> opens the wizard on a page. The README lists every variable (placement, kernel build, packages, window manager, GPU, Secure Boot, custom stage3 and others).</p>
+      <p>After the install, <code>simple-linux-update</code> offers <code>check</code>, <code>kernel</code> and <code>system</code>: whether the store has a different build of the machine's kernel, fetching it while keeping the running one as a previous-kernel boot entry, and <code>emerge --sync</code> plus <code>emerge -uDN @world</code>.</p>
+
+      <h3>What was tested and what was not</h3>
+      <p>Most bugs in this project were found by real runs, not unit tests: a headless install in a VM from a minimal image onto a blank disk, then booting the installed disk. Verified in QEMU/KVM: full headless installs (default and all software groups, binary only), the installed disk booting to a login with the right user, shell, subvolumes and services, resume after a failed phase, the offline GUI image installing with the network blocked, an install into the free space of a disk holding other systems (they stayed intact, the Limine menu listed them, the new system booted), an install that built its own kernel and booted on it, both images on BIOS and UEFI, and the GUI wizard on a virtual 3D GPU.</p>
+      <div class="note-box"><p>Not verified: real hardware beyond my own machines; a picture of the installed desktop in a VM; the graphical wizard end to end after the latest changes (the free-space choice and layouts were looked at, not driven through an install); an end-to-end offline install from the minimal image; the kernel build with clang or for NVIDIA; booting the other systems from the Limine menu; the Wi-Fi flow against a real <code>iwd</code>; Secure Boot of an installed system under OVMF. LUKS is not implemented.</p></div>
+      <p>Known gaps: downloads are tested in a VM rather than in <code>cargo test</code>; <code>useradd -p</code> skips the password-quality check that <code>chpasswd</code> would apply; the GUI has no page for host name and locale list (defaults <code>simple-linux</code> and <code>en_US.UTF-8</code>, or the environment); the text installer has no free-space or layout choice (environment only); the installer UI is not translated. The screenshots above are from release 0.2.33 and may differ from the current wizard.</p>
+
+      <h3>Links</h3>
+      <p><a href="https://github.com/tarilka0gg/gentoo-installer">Source</a> (GPL-2.0-or-later). The installer has no releases of its own: its releases are the Simple Linux images, listed on the <a href="https://github.com/tarilka0gg/simple-linux/releases">Simple Linux releases page</a>. Related: <a href="../simple-linux/">Simple Linux</a>, <a href="../portage-store/">Portage Store</a>, <a href="../ustan/">ustan</a>, <a href="../tui-shim/">tui-shim</a>.</p>
+
+      <nav class="next" aria-label="More">
+        <a href="../simple-linux/">← Simple Linux</a>
+        <a href="../portage-store/">Portage Store →</a>
+      </nav>
+    </article>
+
+    <footer class="lower">
+      <p>Linux developer · Gentoo · Rust</p>
+      <nav class="footer-links" aria-label="More">
+        <a href="../../">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="../../about/">About</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="../../assets/waves.js" defer></script>
+  <script src="../../assets/live.js" defer></script>
+</body>
+</html>

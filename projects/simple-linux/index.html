@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simple Linux — tarilka0gg — tarilka0gg</title>
+  <meta name="description" content="A small Gentoo-based live system with its own installer: how it is built, how to try it, and what has been tested.">
+  <meta name="theme-color" content="#090b10">
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body class="inner">
+  <div class="waves" aria-hidden="true"><canvas></canvas></div>
+
+  <main class="page">
+    <header class="site-header">
+      <a class="name" href="../../">tarilka0gg</a>
+      <nav aria-label="Site">
+        <a href="../../projects/">Projects</a>
+        <a href="../../notes/">Notes</a>
+        <a href="../../updates/">Updates</a>
+        <a href="../../about/">About</a>
+        <a href="https://github.com/tarilka0gg">GitHub</a>
+      </nav>
+    </header>
+
+    <article class="article">
+      <p class="crumbs"><a href="../">Projects</a> /</p>
+      <h2>Simple Linux</h2>
+      <p class="lead">A small Gentoo-based live system with its own installer, a kernel matched to the hardware, and a ready desktop.</p>
+      <ul class="meta"><li>GPL-2.0-or-later</li><li>Gentoo · OpenRC · Limine</li><li><a href="https://github.com/tarilka0gg/simple-linux">Source</a></li><li><a href="https://github.com/tarilka0gg/simple-linux/releases">Releases</a></li></ul>
+      <ul class="meta live" data-repo="simple-linux"></ul>
+
+      <h3>What it is</h3>
+      <p>Simple Linux is a small Gentoo-based live system with its own installer. It ships as two bootable images (a text one and a GUI one), the stage3 they install from, a kernel, and the desktop setup the GUI image boots into. Gentoo stays underneath: Portage, OpenRC, your own <code>USE</code> flags and overlays all remain available. What I wanted to remove is the first day of a Gentoo install, the typing and the hours of compiling.</p>
+      <p>It is for people who like Gentoo but do not want to follow the handbook by hand, and it is for me, as the system I actually run. It is young. If you want a distribution that is finished and supported today, use one of those; if you want Gentoo without the first day, try this and tell me what happens.</p>
+
+<figure><img src="../../assets/img/projects/simple-linux-desktop.png" alt="The Simple Linux live desktop: niri with the Noctalia bar and dock" width="1280" height="800" decoding="async"><figcaption>The GUI image after boot: niri with the Noctalia bar and dock, in the colours of the wallpaper (0.2.33, in a virtual machine).</figcaption></figure>
+
+      <h3>How it fits together</h3>
+      <p>The repository holds what comes out of the build and the parts that are configuration rather than code. The installer and the scripts that build the images live in <a href="../installer/">gentoo-installer</a>. The pieces:</p>
+      <ul>
+        <li><strong>Images.</strong> Boot on BIOS and UEFI through Limine, with dracut live boot on OverlayFS. Both are Secure Boot capable but not Microsoft-signed.</li>
+        <li><strong>Kernel.</strong> Live kernel 7.1.8 (the CachyOS-patched tree, a generic config). The full <code>.config</code> and the fragment added on top of <code>x86_64_defconfig</code> are in <code>kernel/</code>. The installer copies a prebuilt kernel matched to the hardware instead of compiling one; those come from the <a href="https://github.com/tarilka0gg/simple-linux-binhost">binhost repository</a>.</li>
+        <li><strong>Packages.</strong> Binary packages from Gentoo's own binhost, plus the project's own binhost for what Gentoo does not build (niri, Noctalia, ghostty, and packages whose USE flags the installer changes). They are signed and built against the same Portage tree snapshot the installer unpacks.</li>
+        <li><strong>Desktop profile.</strong> <code>profile/</code> has the niri config, Noctalia config and settings, and community palettes, derived from my own setup with machine- and person-specific parts removed.</li>
+        <li><strong>Software groups.</strong> The same flavor and mix-in data that drives the installer drives the <code>slp</code> command on an installed system.</li>
+      </ul>
+
+      <h3>What is in the GUI image</h3>
+      <p>The base is a Gentoo stage3 (OpenRC) with fish as root's shell. The GUI image adds niri and Noctalia (colours follow the wallpaper, and the terminal, GTK programs, btop, tmux and fastfetch follow too, through Noctalia's templates), Ghostty, Thunar, GParted, PipeWire, Zen Browser (downloaded on first use), <a href="../portage-store/">Portage Store</a>, <a href="../ustan/">ustan</a> for <code>.deb</code>, AppImage, Flatpak and <code>.exe</code> files, and <a href="../tui-shim/">tui-shim</a>, which makes terminal programs behave like desktop apps. The live system uses a static BusyBox for 83 of the GNU coreutils programs; the installed system keeps GNU coreutils.</p>
+
+      <div class="gallery">
+<figure><img src="../../assets/img/projects/simple-linux-launcher.png" alt="The launcher listing Install Simple Linux, Ghostty, Thunar, Zen Browser and Portage Store" width="1280" height="800" decoding="async"><figcaption>The launcher. It starts with the installer, the terminal, files and the browser.</figcaption></figure><figure><img src="../../assets/img/projects/simple-linux-terminal.png" alt="Ghostty running fish and fastfetch" width="1280" height="800" decoding="async"><figcaption>Ghostty with fish and fastfetch.</figcaption></figure><figure><img src="../../assets/img/projects/simple-linux-tiling.png" alt="Thunar and btop side by side in niri" width="1280" height="800" decoding="async"><figcaption>Thunar and btop side by side in niri's scrolling columns.</figcaption></figure>
+      </div>
+
+      <h3>Why not a plain Gentoo install</h3>
+      <ul>
+        <li><strong>A real installer</strong> with a graphical wizard: partitioning, locale and time zone, user, desktop, software groups and GPU driver are choices on pages, and a failed install can be resumed from where it stopped.</li>
+        <li><strong>Flavors and software groups.</strong> Pick <code>minimal</code>, <code>desktop</code> or <code>workstation</code> and tick groups (office, media, development, gaming, Steam, Minecraft, Craft creative apps and more). The choice is kept on the installed system and changed with <code>slp</code>.</li>
+        <li><strong>A kernel for your hardware, not compiled on it.</strong> The installer detects CPU generation, GPU vendor and laptop or desktop, and copies the matching prebuilt kernel, or a generic x86-64 v2/v3 build when nothing more specific exists.</li>
+        <li><strong>Every decision is a <code>git log</code>.</strong> The installer commits what it wrote to <code>/etc/portage</code>, so "what did it do" and "undo it" are ordinary git.</li>
+        <li><strong>Checkable.</strong> The release checksums are signed (<code>SHA256SUMS.sig</code>) and this repository is configuration, not a blob.</li>
+      </ul>
+      <p>A full install of the desktop and the software groups that existed at 0.2.31 merged 263 packages in a VM and compiled none, in about 15 minutes. That is a VM measurement, not a promise for your machine.</p>
+
+      <h3>Downloads</h3>
+      <p>Everything large is attached to the <a href="https://github.com/tarilka0gg/simple-linux/releases">Releases</a> page. The current version is 0.2.46 (28 October 2026); there were 43 releases between 5 and 28 October 2026, and versions before 0.1.2 are withdrawn because they did not boot on the first laptop I tried them on.</p>
+      <div class="table-wrap"><table><thead><tr><th>File</th><th>Size</th><th>What it is</th></tr></thead><tbody>
+        <tr><td><code>simple-linux-minimal.iso</code></td><td>0.34 GB</td><td>text installer, rescue tools, firmware</td></tr>
+        <tr><td><code>simple-linux-gui.iso</code></td><td>0.48 GB</td><td>the same plus the niri + Noctalia desktop and the graphical installer</td></tr>
+        <tr><td><code>simple-linux-gui-offline.iso</code></td><td>2.0 GB</td><td>the GUI image with everything an install downloads; installs without a network</td></tr>
+        <tr><td><code>simple-linux-minimal-offline.iso</code></td><td>1.9 GB</td><td>the same for the text installer</td></tr>
+      </tbody></table></div>
+      <p>The sizes are the README's table; the CHANGELOG for 0.2.46 gives slightly different figures in MiB for the images as built then. The offline images carry the default software groups and open-source GPU drivers only. Zen, the optional groups and NVIDIA's driver need a network afterwards.</p>
+
+      <h3>Verify and boot</h3>
+      <p>The checksums are signed with an ssh key whose public half is in <code>signing/allowed_signers</code>. With the files in one directory:</p>
+      <pre><code>sh signing/verify.sh .</code></pre>
+      <p>Try it in a VM, or write it to a stick (this erases the stick, so check the device name first):</p>
+      <pre><code>qemu-system-x86_64 -enable-kvm -m 4096 -cdrom simple-linux-minimal.iso
+
+sha256sum -c --ignore-missing SHA256SUMS
+sudo dd if=simple-linux-gui.iso of=/dev/sdX bs=4M status=progress conv=fsync</code></pre>
+      <p>The live system logs in as <code>root</code> automatically (empty password) and starts the installer. DHCP runs at boot; Wi-Fi is <code>iwd</code>. Ventoy works: the default mode works since 0.2.15, and grub2 mode works too. If a machine does not start, Limine offers a menu for 3 seconds with a USB workaround, safe graphics (<code>nomodeset</code>), verbose and serial console entries; the README says which to try in which order.</p>
+      <div class="note-box"><p>Secure Boot: the images are not Microsoft-signed, so stock firmware refuses them with "Access Denied". Turn Secure Boot off, or enrol <code>secureboot/simple-linux-db.cer</code> in the firmware's <code>db</code>. This was checked under OVMF only. The installed system is not set up for Secure Boot by default; the installer has an option that makes a key on that machine.</p></div>
+      <div class="note-box"><p>niri refuses software rendering. On a machine without hardware-accelerated graphics the GUI image falls back to the text installer after about 25 seconds.</p></div>
+
+      <h3>What has and has not been tested</h3>
+      <p>In QEMU/KVM: all four images boot on BIOS and UEFI; the GUI image reaches the niri session with the installer, Thunar, Zen and PipeWire on a virtual 3D GPU; full headless installs from the minimal image onto a blank virtual disk, with the installed system then booting on its own and the created user logging in; a console-only install interrupted and resumed to the end; and a full install of the GUI offline image with the outside network blocked. The generic kernels have no virtual-GPU driver, so I have not seen a picture of the installed desktop in a VM.</p>
+      <p>On real hardware: installed and booted on two computers, my laptop and an Intel Core i9-14900HX laptop with an NVIDIA GPU, installed from the GUI image next to Windows. The second install needed hand fixes (the NVIDIA module build, <code>iwd</code> not starting for want of kernel options, and the bootloader step stopping on the shared EFI partition). Release 0.2.40 contains those fixes, and they have not been run on that laptop again.</p>
+      <p>Not done or not confirmed: other machines, the desktop and GPU-driver steps on a real target, the Wi-Fi screen against a real <code>iwd</code>, LUKS (not in the installer), and Secure Boot for the installed system. It is not a binary distribution with its own repository of everything: anything outside Gentoo's binhost and this project's compiles on your machine. I would call it an early build, but a working one. Reports of what the verbose boot entry prints on a failing machine are the most useful thing you can send.</p>
+
+      <h3>Links</h3>
+      <p><a href="https://github.com/tarilka0gg/simple-linux">Source</a>, <a href="https://github.com/tarilka0gg/simple-linux/releases">releases</a>, <a href="https://github.com/tarilka0gg/simple-linux/blob/main/CHANGELOG.md">changelog</a>. Related: the <a href="../installer/">installer</a>, <a href="../portage-store/">Portage Store</a>, <a href="../ustan/">ustan</a>, <a href="../tui-shim/">tui-shim</a>. The repository's files are GPL-2.0-or-later like the installer; the images contain many packages under their own licences (see <code>NOTICE.md</code>).</p>
+
+      <nav class="next" aria-label="More">
+        <span></span>
+        <a href="../installer/">Installer →</a>
+      </nav>
+    </article>
+
+    <footer class="lower">
+      <p>Linux developer · Gentoo · Rust</p>
+      <nav class="footer-links" aria-label="More">
+        <a href="../../">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="../../about/">About</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="../../assets/waves.js" defer></script>
+  <script src="../../assets/live.js" defer></script>
+</body>
+</html>

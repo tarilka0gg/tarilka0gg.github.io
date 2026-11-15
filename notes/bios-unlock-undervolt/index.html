@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BIOS unlock and CPU undervolt on the Victus 16 — tarilka0gg</title>
+  <meta name="description" content="How I unlocked the OC mailbox on an HP Victus 16, found three separate power caps, and measured a CPU undervolt with a boost-aware stability test.">
+  <meta name="theme-color" content="#090b10">
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body class="inner">
+  <div class="waves" aria-hidden="true"><canvas></canvas></div>
+
+  <main class="page">
+    <header class="site-header">
+      <a class="name" href="../../">tarilka0gg</a>
+      <nav aria-label="Site">
+        <a href="../../projects/">Projects</a>
+        <a href="../../notes/" aria-current="page">Notes</a>
+        <a href="../../updates/">Updates</a>
+        <a href="../../about/">About</a>
+        <a href="https://github.com/tarilka0gg">GitHub</a>
+      </nav>
+    </header>
+
+    <article class="article">
+      <p class="crumbs"><a href="../">Notes</a> /</p>
+      <h2>BIOS unlock and CPU undervolt on the Victus 16</h2>
+      <p class="lead">Patching the BIOS so the voltage mailbox works, finding the power caps behind 44 W, and what the undervolt actually gained.</p>
+      <ul class="meta"><li>Jul–Aug 2026</li><li>BIOS, undervolt, RAPL, EC, fans</li><li><a href="https://github.com/tarilka0gg/system-lab">Source</a></li></ul>
+
+      <div class="note-box"><p>Every number on this page is for my own silicon: an i7-14650HX in an HP Victus 16 (board 8C99, BIOS F.15). Every die has its own margin, and on a different board the same BIOS offsets mean something else. Do not copy these values. A wrong undervolt can corrupt data without a crash, and a wrong BIOS write can leave the laptop unbootable.</p></div>
+
+      <h3>The problem</h3>
+      <p>Under full load the laptop sat at 44 W and about 2.1 GHz. I remembered it pulling 120 W, and a game I play (Rust) had frame drops. I wanted an undervolt, so the same power budget would buy more clock. That turned into three separate problems: the BIOS hid the voltage controls, a software cap I had forgotten about held the power down, and the embedded controller (EC) throttled on its own timer. I worked on it from 24 July to 1 August 2026, in 29 sessions that I logged in a journal.</p>
+
+      <h3>Step 1: the OC mailbox was dead</h3>
+      <p>Undervolting on Intel goes through the overclocking mailbox, MSR <code>0x150</code>. On this laptop <code>intel-undervolt</code> and <code>throttled</code> both reported <code>Values do not equal</code>: the write was accepted and then read back as zero. The locks (<code>CFG Lock</code>, <code>OC Lock</code>) were already clear on the live CPU. The problem was the master switch, <code>OverClocking Feature</code> in the BIOS <code>CpuSetup</code> variable, which was 0 and made the mailbox ignore writes.</p>
+      <p>I could not set it from the OS. The Insyde H2O firmware rejects runtime <code>SetVariable</code> for Setup variables (<code>EROFS</code>); it only works from boot services, such as a UEFI Shell. I prepared a USB stick with <code>setup_var.efi</code>, and in the end I flashed a patched BIOS image instead, so a reset to defaults would not undo the change.</p>
+      <p>The patch, in outline:</p>
+      <ul>
+        <li>I parsed the variable store of three images and listed every <code>*Lock</code> option in the setup forms.</li>
+        <li>I set <code>OverClocking Feature</code> to 1 and cleared <code>CFG Lock</code>, <code>Overclocking Lock</code>, a third lock, <code>PROCHOT Lock</code>, <code>HwP Lock</code> and <code>Tcc Offset Lock</code>.</li>
+        <li>I applied this to all 5 copies of <code>CpuSetup</code> inside the image (three defaults blocks, the working NVRAM copy and its backup). The image holds several copies, and a reset to defaults would restore the unpatched one.</li>
+        <li>Before flashing I checked the 14 changed bytes in every copy (<code>verify-final.py</code>).</li>
+      </ul>
+      <p>On 26 July I flashed it. After the first boot I checked that a write holds, because reading zero is ambiguous (it can mean "dead" or "offset is really 0"). I stopped <code>throttled</code>, which writes zeros every second, applied -50/-30/-50/-30 mV and read the same values back. The mailbox was alive.</p>
+      <div class="note-box"><p>I publish no BIOS images and no variable dumps. My images contain the machine serial number and other identifiers, and the layout of the Setup variables depends on the BIOS version, so a dump restored onto another version breaks settings. The repository has only byte-level patch tables and a script that checks the old byte at every offset and refuses to run on a mismatch.</p></div>
+
+      <h3>Step 2: the 44 W cap was software</h3>
+      <p>The 44 W limit was not the EC and not the BIOS. Session 4 found two caps stacked. <code>throttled</code> was rewriting PL1/PL2 every few seconds in two places, the RAPL MSR <code>0x610</code> and the memory-mapped copy at <code>MCHBAR+0x59A0</code>. The MMIO copy takes priority, so raising only the MSR did nothing. Neither was locked, so the fix is plain config: <code>/etc/throttled.conf</code>, sections <code>[AC]</code> and <code>[BATTERY]</code>.</p>
+<pre><code>[AC]
+PL1_Tdp_W: 80
+PL2_Tdp_W: 115
+Update_Rate_s: 1</code></pre>
+      <p>With 80/115 W the package drew 80.0 W under a synthetic load, at 81 to 82 degrees C.</p>
+
+      <h3>Step 3: the EC's turbo budget</h3>
+      <p>Even with both registers at 80 W I sometimes saw 45 to 54 W. I ruled out the clamp bit, cTDP, HWP/EPP and something overwriting the registers. The real cause is in the EC: until something writes to <code>/sys/firmware/acpi/platform_profile</code>, it keeps its own lower limit. After a write it grants full PL1 for only about 2 to 2.5 minutes, then drops to about 45 W (the HWP guaranteed level). The write is what matters, not the value; writing <code>performance</code> when the profile is already <code>performance</code> still rearms it, while <code>powerprofilesctl</code> does nothing in that case.</p>
+<pre><code>echo performance &gt; /sys/firmware/acpi/platform_profile</code></pre>
+      <p>A small OpenRC daemon, <code>sustained-turbo</code>, repeats that write every 90 seconds under load. It cost nothing at idle: after a compile finished, the same machine drew 14.8 W at 55 degrees C with the fans stopped. To see real draw I read the energy counter (<code>0x611</code>); the <code>0x610</code> register only shows the configured limit. The scripts are in <a href="https://github.com/tarilka0gg/power-scripts">power-scripts</a>.</p>
+      <p>One more dead end: switching the configurable TDP level (MSR <code>0x64B</code>). The level registers are read-only, and moving to Level2 (65 W) at the same measured power halved the P-core clock (4397 to 2196 MHz). The EC treats the change as a signal to cut the turbo ratio. I put it back to nominal and left it alone.</p>
+
+      <h3>Step 4: the undervolt, and a methodology mistake</h3>
+      <p>The voltage offsets go in the same <code>throttled.conf</code>, under <code>[UNDERVOLT.AC]</code> and <code>[UNDERVOLT.BATTERY]</code>. I did not use <code>intel-undervolt apply</code> at the same time: both write MSR <code>0x150</code>, so they race.</p>
+      <p>The gain only shows when the load is power-bound. In my first runs I used a mixed load that never reached the power limit, and every undervolt looked like "nothing" (the clock barely moved). Those rows are flagged <code>MIXED-INVALID</code> in my data. With a power-bound all-core load at PL1 = 80 W:</p>
+      <div class="table-wrap"><table><thead><tr><th>Offset (CORE / CACHE)</th><th>All-core clock</th><th>Core voltage</th><th>Package draw</th><th>Temp</th></tr></thead><tbody>
+        <tr><td>0 / 0</td><td>2733 MHz</td><td>950 mV</td><td>80.0 W</td><td>80 C</td></tr>
+        <tr><td>-100 / -100 mV</td><td>3553 MHz</td><td>908 mV</td><td>80.0 W</td><td>83 C</td></tr>
+      </tbody></table></div>
+      <p>That is +30% clock at the same power. A second pair of runs at -120 mV agrees (P-cores 3435 to 3894 MHz, core voltage 961 to 917 mV). In the sweep at -100, -120 and -140 mV the clock rose in steps, from 3567 to 3583 to 3705 MHz, each at 79.9 W.</p>
+      <p>The mistake was trusting one all-core test. This CPU runs at two very different voltage/frequency points:</p>
+      <ul>
+        <li>all-core: about 3.9 GHz at 0.89 V;</li>
+        <li>light-load boost with 1 to 4 threads active: 4.6 to 4.9 GHz at 1.03 to 1.13 V.</li>
+      </ul>
+      <p><code>CORE -160</code> passed the all-core test and failed on boost. Every failing point showed zero WHEA and zero MCE events, so the kernel log tells you nothing. The only detector that worked was compute correctness, using y-cruncher in stress mode, once on all threads and once pinned to 1 or 2 threads:</p>
+<pre><code>/opt/y-cruncher/y-cruncher stress -M:4G -D:60 -TL:600</code></pre>
+      <p>The same command, pinned to one or two threads with <code>taskset</code>, covers the boost point (my <code>boost-test.sh</code> does this).</p>
+      <p>I look for <code>Exception</code>, <code>Mismatch</code> and <code>: Failed</code> in the output. The config line <code>Stop on Error: Enabled</code> is harmless and easy to mistake for a failure.</p>
+
+      <h3>Measured limits</h3>
+      <p>"Passing" means the point survived y-cruncher on all-core and on light-load boost at PL1/PL2 = 80/115 W. It is not a guarantee of everyday stability.</p>
+      <div class="table-wrap"><table><thead><tr><th>Domain</th><th>Last passing</th><th>Where it breaks</th></tr></thead><tbody>
+        <tr><td>CORE</td><td>-150 mV</td><td>-160: silent failure on boost; -165: also on all-core</td></tr>
+        <tr><td>CACHE</td><td>-175 mV</td><td>-180: fails on light-load boost</td></tr>
+        <tr><td>GPU (iGPU)</td><td>-150 mV</td><td>no break point found</td></tr>
+        <tr><td>UNCORE / System Agent</td><td colspan="2">left alone: memory controller, PCIe, display engine; the risk is silently corrupted memory</td></tr>
+        <tr><td>ANALOGIO</td><td colspan="2">left alone: it gives nothing</td></tr>
+      </tbody></table></div>
+      <p>The CACHE sweep ran at CORE -140 and CORE -150. Offsets of -150 to -175 mV passed both tests; -180 failed on boost. At CORE -160, CACHE -175 failed on boost, and at CORE -165 every CACHE value failed on all-core, so the CACHE limit only means something if CORE is at or above -150.</p>
+      <p>CORE drives the voltage of the shared core and ring rail. I checked this by asking which setting is holding the voltage: CORE -20 mV moved the measured rail by 17 mV, CACHE -20 mV by 2 mV, which is noise. CACHE does not move the voltage, but it has its own stability limit.</p>
+      <p>I settled on CORE -150, CACHE -175 and GPU -150 at 80/115 W as the last fully validated point. Later I changed the live values (see the open questions).</p>
+
+      <h3>Fans</h3>
+      <p>The laptop has two fans on the <code>hp_wmi</code> driver, which exposes a shared <code>pwm1</code> (0 to 255) and <code>pwm1_enable</code> (2 is automatic, 1 is manual). Manual control works: a test write moved the fans from 3900/4200 to 4400/4400 RPM in 3 seconds, and the driver rounds values to steps (I wrote 220 and got 193).</p>
+      <p>The fans went quiet under load for a reason I found in the driver source. Every write to <code>platform_profile</code> puts the EC into a user-defined thermal state for 120 seconds. My rearm loop writes every 90 seconds, so the EC never returned to the automatic curve that <code>pwm1_enable=2</code> depends on. On this board the driver has no fallback table, so the automatic curve did not work at all while the daemon was active. The daemon now drives the fans itself, from the package temperature, and hands control back to the EC when it stops. In the first version the curve was a minimum of pwm 90 (about 1900 RPM, never 0) below 70 C, 140 from 70 C, 193 from 80 C and 255 from 90 C. Later I extended it with a power-based curve as well.</p>
+      <div class="note-box"><p>A manual fan curve has no protection of its own: a low PWM under load means overheating with only the hardware thermal shutdown left. Tie any permanent curve to a real temperature sensor.</p></div>
+
+      <h3>Result</h3>
+      <p>With the EC rearmed, EPP set to <code>performance</code>, C3 disabled (it caused input micro-stutters on AC) and <code>gamemode</code>, Rust ran at 130 FPS for the first time. During that session the CPU drew 41 W and the GPU was at 94% utilisation, so the GPU had become the limit. That is a single observation from one game, not a benchmark. Disabling C3 costs idle power on battery: 44 W against about 26 W with it enabled.</p>
+
+      <h3>Rollback</h3>
+      <p>Stopping <code>throttled</code> does not clear the offset: what was written to MSR <code>0x150</code> stays until it is overwritten or the machine reboots. To roll back:</p>
+      <ol>
+        <li>Set every value in <code>[UNDERVOLT.AC]</code> and <code>[UNDERVOLT.BATTERY]</code> (CORE, GPU, CACHE, UNCORE, ANALOGIO) to 0 in <code>/etc/throttled.conf</code>.</li>
+        <li><code>rc-service throttled restart</code>. It writes zeros to the mailbox every second. If the system still misbehaves, reboot.</li>
+        <li>Read the mailbox back with a read-only script. All five domains should show +0.0 mV. A non-zero value means the rollback has not happened.</li>
+      </ol>
+      <p><code>throttled</code> reapplies its config at boot, so an unstable value survives a reboot. If a machine will not stay up, run <code>rc-service throttled stop</code> right after boot and fix the file. The signs of silent instability are not crashes: corrupted archives, compile errors that do not reproduce, odd compute results. To undo the BIOS change itself, reflash the original image. I kept it, and I checked that my patch script reproduces the flashed image byte for byte from it. My scripts that write to MSR, sysfs or EFI refuse to run on a different board (exit code 64).</p>
+
+      <h3>What I would do differently, and open questions</h3>
+      <ul>
+        <li>Test boost and all-core from the start. The mixed-load runs and the all-core-only tests both gave misleading answers.</li>
+        <li>The live config drifted from what I validated: on AC it runs 95/135 W (validated at 80/115), CACHE 0 and GPU -120. My y-cruncher check at 95/135 W never finished, so that combination has no verdict.</li>
+        <li>On battery the live CORE offset is -210 mV, while the journal records -150. Nothing documents the -210 and there are no y-cruncher logs behind it. Battery uses much lower power limits, so the voltage regime differs, but that is an assumption.</li>
+        <li>I never found why the auto mode of <code>sustained-turbo</code> kept dying silently, with nothing in dmesg or the cgroup counters. I switched it to an always-rearm mode that holds no state. The resume hook that rearms the EC after sleep has never been checked against a real suspend.</li>
+              </ul>
+
+      <nav class="next" aria-label="More">
+        <span></span>
+        <a href="../autofdo-propeller-kernel/">AutoFDO and Propeller kernel →</a>
+      </nav>
+    </article>
+
+    <footer class="lower">
+      <p>Linux developer · Gentoo · Rust</p>
+      <nav class="footer-links" aria-label="More">
+        <a href="../../">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="../../about/">About</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="../../assets/waves.js" defer></script>
+</body>
+</html>

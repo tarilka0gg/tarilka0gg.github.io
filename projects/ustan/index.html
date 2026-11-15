@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ustan — tarilka0gg</title>
+  <meta name="description" content="A Windows-style installer for Linux that installs deb, rpm, AppImage, snap, Flatpak, Wine and archive packages into the home directory, with a clean uninstall.">
+  <meta name="theme-color" content="#090b10">
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body class="inner">
+  <div class="waves" aria-hidden="true"><canvas></canvas></div>
+
+  <main class="page">
+    <header class="site-header">
+      <a class="name" href="../../">tarilka0gg</a>
+      <nav aria-label="Site">
+        <a href="../../projects/">Projects</a>
+        <a href="../../notes/">Notes</a>
+        <a href="../../updates/">Updates</a>
+        <a href="../../about/">About</a>
+        <a href="https://github.com/tarilka0gg">GitHub</a>
+      </nav>
+    </header>
+
+    <article class="article">
+      <p class="crumbs"><a href="../">Projects</a> /</p>
+      <h2>ustan</h2>
+      <p class="lead">A Windows-style installer for Linux: open a package, see what it is, press Install. Everything goes into your home directory, with a menu entry, an icon and a clean uninstall, whatever the format.</p>
+      <ul class="meta"><li>GPL-2.0-or-later</li><li>Rust · Zig · GTK4/libadwaita</li><li><a href="https://github.com/tarilka0gg/ustan">Source</a></li><li><a href="https://github.com/tarilka0gg/ustan/blob/master/CHANGELOG.md">Changelog</a></li></ul>
+      <ul class="meta live" data-repo="ustan"></ul>
+
+      <h3>What it is</h3>
+      <p>On Linux the way you install a program depends on how it was packaged: a <code>.deb</code> wants dpkg and root, an AppImage wants <code>chmod +x</code>, a Windows <code>.exe</code> wants a Wine prefix you set up by hand. ustan puts one front end over all of them. You double-click a file, it shows what the file is (name, format, icon), and offers Install, Open or Extract here. Nothing needs root: the app lands in your home directory with a menu entry and an icon, and removing it removes everything ustan created for it.</p>
+      <p>It is meant for people coming from Windows or macOS who just want to run something they downloaded, and for me, because <a href="../simple-linux/">Simple Linux</a> should not make anybody learn five package tools to run a downloaded file. There is a command-line tool (<code>ustan</code>) and a GTK4/libadwaita front end (<code>ustan-gui</code>) that share the same core.</p>
+
+      <div class="gallery">
+<figure><img src="../../assets/img/projects/ustan-inspect.png" alt="ustan opens a package and shows its name, format and icon" width="1125" height="900" decoding="async"><figcaption>Open a package: ustan shows what it is and offers Install, Open or Extract here.</figcaption></figure>
+<figure><img src="../../assets/img/projects/ustan-installing.png" alt="The install progress bar with a Cancel button" width="1125" height="900" decoding="async"><figcaption>Installing: a progress bar with a Cancel button while the package is unpacked and the launcher is made.</figcaption></figure>
+      </div>
+
+      <h3>Formats and how each is installed</h3>
+      <div class="table-wrap"><table><thead><tr><th>Format</th><th>How it is installed</th></tr></thead><tbody>
+        <tr><td><code>.deb</code>, <code>.rpm</code>, Arch <code>.pkg.tar.*</code></td><td>Unpacked into <code>~/.local/opt/&lt;app&gt;</code>. Programs run with the package overlaid on <code>/usr</code> (bubblewrap), so hard-coded <code>/usr/share/&lt;app&gt;</code> paths work.</td></tr>
+        <tr><td><code>.AppImage</code></td><td>Copied; the icon and <code>.desktop</code> file are read from the image, without running it.</td></tr>
+        <tr><td><code>.snap</code></td><td>Unpacked without snapd. Base and content snaps are fetched from the store (SHA3-384 verified) and run in a bubblewrap sandbox.</td></tr>
+        <tr><td>Flatpak (<code>flatpak:&lt;id&gt;</code>, <code>.flatpakref</code>, <code>.flatpak</code>)</td><td>Delegated to <code>flatpak --user</code>.</td></tr>
+        <tr><td><code>.exe</code>, <code>.msi</code></td><td>Run through Wine, one prefix per app. For installers (<code>--installer</code>, <code>--installer-args "/S"</code>) the Start Menu shortcuts they create are turned into launchers.</td></tr>
+        <tr><td><code>.tar.*</code>, <code>.zip</code>, <code>.7z</code></td><td>A menu entry for GUI programs, a command in <code>~/.local/bin</code> for tools; Windows programs inside run through Wine. <code>tar.*</code> is streamed from disk and a multi-block <code>.xz</code> is decoded on several threads, so a multi-GB game archive does not have to fit in RAM. Games that ship a Wine wrapper (Kron4ek builds with <code>start.sh</code>) get their runner, DXVK (d3d9) and wow64 set up, and are named after the archive.</td></tr>
+        <tr><td><code>.jar</code></td><td>A <code>java -jar</code> launcher.</td></tr>
+        <tr><td>makeself <code>.run</code> / <code>.sh</code></td><td>The payload is unpacked; the embedded script is never run.</td></tr>
+        <tr><td>Bare ELF binary</td><td>A menu entry or a command, depending on the toolkit it links.</td></tr>
+      </tbody></table></div>
+
+      <h3>How it works</h3>
+      <p>The workspace has three crates: <code>core</code> (the format backends, manifests, updates, Wine runner discovery), <code>cli</code> and <code>gui</code>. Each format has its own backend in <code>crates/core/src/backend/</code> (deb, rpm, arch, appimage, snap, flatpak, exe, jar, archive, elfbin). The container-format parsers (ar, rpm, ELF, PE, <code>.lnk</code> shortcuts, parallel xz) are written in Zig under <code>zig/</code> and built by <code>crates/core/build.rs</code>; the rest is Rust.</p>
+      <p>Every install writes a manifest of what was created, and that manifest is what makes uninstall clean. Runtimes that apps depend on (snap bases, for example) are tracked separately: <code>ustan list</code> marks them and <code>ustan prune</code> removes the ones no app uses any more.</p>
+      <p>Downloads (<code>ustan install &lt;url&gt;</code>) are verified against a checksum published next to the file or by the store, and ustan says so when nothing could be checked. After an install, the package's programs are scanned for libraries that are neither in the package nor on the system; the result is reported, not guessed.</p>
+      <p>Updates come from the Flatpak remote, the store (snaps), GitHub Releases (AppImages that carry <code>gh-releases-zsync</code> update info) and the HTTP validator of the URL a file was installed from. <code>ustan watch</code> and <code>ustan autoupdate</code> check in the background.</p>
+
+      <h3>Using it</h3>
+<pre><code>ustan install &lt;file | url | flatpak:id&gt; [--installer] [--installer-args "/S"] [--sha256 …]
+ustan inspect &lt;file | url&gt;      what is this, without installing
+ustan list                      installed apps (runtimes are marked)
+ustan remove &lt;id&gt;               ustan prune        remove unused runtimes
+ustan update [id] [--check]     ustan scan [--update]   AppImages found elsewhere on disk
+ustan watch [--once]            check in the background; ustan autoupdate enable|disable
+ustan runner [use &lt;name&gt;]       which Wine to use (system, PortProton, Steam Proton, …)
+ustan runner get cachyos        download proton-cachyos from GitHub (sha512-checked)
+ustan register [--exe] [--archives]   open these file types with ustan on double click</code></pre>
+      <p><code>ustan-gui</code> opens the files you double-click, shows what they are with progress and a cancel button, and lists installed apps with Update / Launch / Remove. Run without a file, it opens the manager. When a launched program dies right away, the GUI shows a toast with its output. AppImages start with <code>APPIMAGE_EXTRACT_AND_RUN=1</code> when FUSE 2 is missing.</p>
+
+      <div class="gallery">
+<figure><img src="../../assets/img/projects/ustan-installed.png" alt="The installed screen with Open and Close buttons" width="1125" height="900" decoding="async"><figcaption>Installed: Open starts the program, Close ends.</figcaption></figure>
+<figure><img src="../../assets/img/projects/ustan-manager.png" alt="The manager listing installed apps with Launch and Remove" width="1125" height="900" decoding="async"><figcaption>The manager: installed apps with their format and version, each with Launch and Remove.</figcaption></figure>
+      </div>
+      <p>Screenshots are ustan-gui on a Wayland desktop with a few sample packages installed (a .deb, an AppImage, a tarball, a .jar and a bare binary).</p>
+
+      <p>Messages are English by default and Ukrainian when the Simple Linux language setting says so (<code>USTAN_LANG=uk</code>, <code>SIMPLE_LANG=uk</code>, <code>lang = "uk"</code> in <code>~/.config/simple-linux/locale.toml</code>, or a <code>uk</code> system locale).</p>
+
+      <h3>Getting it</h3>
+      <p>Build from source. It needs Rust and Zig; the GUI also needs GTK 4 and libadwaita 1.6.</p>
+<pre><code>cargo build --release --workspace
+cargo test --workspace &amp;&amp; (cd zig &amp;&amp; zig build test)</code></pre>
+      <p>A live Gentoo ebuild is in <code>packaging/gentoo/</code> (<code>app-misc/ustan-9999</code>, USE flags gui, flatpak, wine). <code>packaging/package.sh</code> builds a <code>ustan-&lt;version&gt;-linux-&lt;arch&gt;.tar.gz</code> with a <code>.sha256</code>; from the tarball, <code>./install.sh</code> installs under <code>/usr/local</code> (<code>PREFIX=$HOME/.local</code> works without root) and <code>./install.sh uninstall</code> removes what it installed.</p>
+
+      <h3>What was tested, and what was not</h3>
+      <div class="note-box"><p>bubblewrap is used to make a package believe it is installed. It is <strong>not</strong> a security boundary: programs still see your home directory. Install what you trust.</p></div>
+      <ul>
+        <li>There are integration tests for every format and a CI workflow, plus Rust and Zig unit tests.</li>
+        <li>Most behaviour was verified on one machine (Gentoo, OpenRC, niri). Anything that talks to another package manager's runtime, such as snaps that rely on other snaps, or Windows installers, can still fail in ways the tests cannot foresee.</li>
+        <li>For the packaging, I checked a tarball install and uninstall into a <code>DESTDIR</code>, <code>desktop-file-validate</code> and <code>appstreamcli</code>. The Gentoo ebuild was only checked with <code>emerge -pv</code>; it was not built.</li>
+        <li>The latest tagged version is 0.2.2 (2026-10-07). The archive streaming, the multi-threaded xz decoding, <code>ustan runner get cachyos</code> and the Wine-wrapper game support are in the unreleased changelog section.</li>
+        <li>The source is GPL-2.0-or-later, but the built binaries also contain the GPL-2.0-only crate <code>rust-lzo</code> (LZO for squashfs), so as a combined work they are distributed under GPL-2.0.</li>
+      </ul>
+
+      <h3>Related</h3>
+      <p>ustan ships with <a href="../simple-linux/">Simple Linux</a>; its language setting comes from the shared simple-locale rule. For terminal programs on the same desktop see <a href="../tui-shim/">tui-shim</a>; <a href="../ring-2zero/">Ring-2Zero</a> is a separate project. The source is at <a href="https://github.com/tarilka0gg/ustan">github.com/tarilka0gg/ustan</a>.</p>
+
+      </article>
+
+    <footer class="lower">
+      <p>Linux developer · Gentoo · Rust</p>
+      <nav class="footer-links" aria-label="More">
+        <a href="../../">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="../../about/">About</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="../../assets/waves.js" defer></script>
+  <script src="../../assets/live.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ring-2Zero — tarilka0gg</title>
+  <meta name="description" content="A Rust Wayland screen streaming server that sends your desktop to any browser over WebRTC using tile diffing and WebP.">
+  <meta name="theme-color" content="#090b10">
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body class="inner">
+  <div class="waves" aria-hidden="true"><canvas></canvas></div>
+
+  <main class="page">
+    <header class="site-header">
+      <a class="name" href="../../">tarilka0gg</a>
+      <nav aria-label="Site">
+        <a href="../../projects/">Projects</a>
+        <a href="../../notes/">Notes</a>
+        <a href="../../updates/">Updates</a>
+        <a href="../../about/">About</a>
+        <a href="https://github.com/tarilka0gg">GitHub</a>
+      </nav>
+    </header>
+
+    <article class="article">
+      <p class="crumbs"><a href="../">Projects</a> /</p>
+      <h2>Ring-2Zero</h2>
+      <p class="lead">A Wayland screen streaming server in Rust. It streams your desktop to any browser over WebRTC: no VNC client, no X11 forwarding, just a URL.</p>
+      <ul class="meta"><li>MIT</li><li>Rust · C (PipeWire helper)</li><li><a href="https://github.com/tarilka0gg/Ring-2Zero">Source</a></li><li><a href="https://github.com/tarilka0gg/Ring-2Zero/blob/remaster/CHANGELOG.md">Changelog</a></li></ul>
+      <ul class="meta live" data-repo="Ring-2Zero"></ul>
+
+      <h3>What it is</h3>
+      <p>Ring-2Zero captures a Wayland output, cuts it into a grid of tiles, hashes each tile to see what changed since the last frame, merges the changed tiles into a few rectangles, encodes those to WebP and sends them to the browser over a WebRTC DataChannel. The browser client is one HTML page embedded in the binary, so the server is the only thing you run: open its URL and you are watching your screen. There is no Node.js server and no separate static file host.</p>
+      <p>It is for anyone who wants to see, and optionally control, a Wayland desktop from a phone or another computer on a LAN, over a VPN such as Tailscale, or across the internet with their own STUN/TURN servers. The default branch of the repository is <code>remaster</code>; the current version is 0.400.0.</p>
+
+      <div class="gallery">
+<figure><img src="../../assets/img/projects/ring-2zero-login.png" alt="The client page asking for the token" width="1280" height="800" decoding="async"><figcaption>Connect: open the server URL and enter the token it printed. The browser remembers it.</figcaption></figure>
+<figure><img src="../../assets/img/projects/ring-2zero-stream.png" alt="A Wayland desktop streamed into the browser with a live statistics bar" width="1280" height="800" decoding="async"><figcaption>The stream: the screen in a browser tab, with tiles per second, traffic, latency and screen size on top.</figcaption></figure>
+      </div>
+      <p>The screenshots show a throwaway nested desktop (a video and a dialog) streamed to a headless browser.</p>
+
+      <h3>How it works</h3>
+      <p>Three stages run in separate threads, joined by channels:</p>
+      <ol>
+        <li><strong>Capture.</strong> <code>wlr-screencopy</code> v3 with DMA-BUF and GBM, with an SHM fallback, on niri, sway and other wlroots compositors. On GNOME, KDE and X11 there is a PipeWire screencast through xdg-desktop-portal, enabled with <code>--features pipewire_capture</code> at build time. The backend is detected at startup. When the compositor reports damage regions, tiles outside them skip hashing.</li>
+        <li><strong>Diff, merge, prioritise, encode.</strong> Each tile gets a cheap half-tile hash first, and only a mismatch triggers the full-tile hash (AVX2/SSE2, with scalar fallbacks); the README reports an 85-99% skip rate on ordinary desktop content. Changed tiles are merged into rectangles of up to 4x4 cells, with the merge aggressiveness tuned at startup from a WebP encode-speed benchmark of your CPU. They are then sorted by a weighted score (how often they change, how fast, how close to the centre) and encoded to WebP by a worker pool. A per-tile cache skips re-encoding of tiles that were re-selected without changing.</li>
+        <li><strong>Transport.</strong> Tiles are packed into messages on an unordered, reliable DataChannel. The client acknowledges each decoded batch, and a batch with no acknowledgement after 150 ms is treated as lost: every grid cell it covered is re-sent. Tile quality backs off when the DataChannel send buffer fills up and recovers gradually.</li>
+      </ol>
+      <p>Signaling (SDP, ICE) rides a WebSocket on the same port that serves the page. The browser decodes each tile with <code>createImageBitmap</code> and paints it onto a canvas, and only acknowledges a batch once every tile in it has decoded. Both the WebRTC layer and the page reconnect on their own. <code>docs/DEVELOPMENT.md</code> in the repo has the full architecture and byte-level wire format.</p>
+
+      <h3>Security and remote control</h3>
+      <p>The server needs a token. A random one is generated and printed at each start, or you fix it with <code>RING2ZERO_TOKEN</code>. The client sends it as its first WebSocket message, never in the URL, so it stays out of browser history and proxy logs. It is compared in constant time, a client that sends nothing valid within 5 seconds is dropped, and a wrong token is answered after a 1 second delay with close code 4001, which lets the page tell "wrong password" from "server unreachable". TLS (<code>wss://</code>) is optional, through <code>RING2ZERO_TLS_CERT</code> and <code>RING2ZERO_TLS_KEY</code>, and is needed for Safari and iOS.</p>
+      <p>With <code>--control</code> (off by default) a CONTROL button appears and mouse, wheel and keyboard input is injected through the compositor's virtual-pointer and virtual-keyboard protocols, and clipboard sync works in both directions. On a touch screen a long-press sends a right-click and a two-finger drag scrolls.</p>
+      <div class="note-box"><p>Anyone with the token gets full keyboard and mouse access to your session, and clipboard read and write, when <code>--control</code> is on. The token is no substitute for network isolation: keep the port reachable only over a VPN rather than a public port-forward.</p></div>
+
+      <figure><img src="../../assets/img/projects/ring-2zero-stream-debug.png" alt="The DEBUG button shows the connection counters" width="1280" height="800" decoding="async"><figcaption>Diagnostics: the DEBUG button adds message, acknowledgement and tile counters, failures and the canvas size.</figcaption></figure>
+
+      <h3>Getting it and running it</h3>
+<pre><code>git clone https://github.com/tarilka0gg/Ring-2Zero.git
+cd Ring-2Zero
+./install.sh
+ring-2zero            # or the r2zr alias install.sh adds</code></pre>
+      <p><code>install.sh</code> detects your package manager and installs missing libraries after asking, finds or installs a C compiler and Rust, builds a release binary, installs it as <code>ring-2zero</code> and adds an <code>r2zr</code> alias; <code>./install.sh --dry-run</code> only reports what is missing. The first run benchmarks WebP encoding for a couple of seconds and caches the result (skip it with <code>--no-adaptive</code>). Startup prints the WebSocket address and the token; open <code>http://localhost:9001</code> and paste the token once. By hand: <code>cargo build --release</code>, adding <code>--features pipewire_capture</code> for GNOME, KDE and X11. The linker is pinned to <code>clang</code> in <code>.cargo/config.toml</code>.</p>
+      <p>Configuration is by environment variables and three flags (<code>--no-adaptive</code>, <code>--debug</code>, <code>--control</code>); there is no config file. Useful variables:</p>
+      <div class="table-wrap"><table><thead><tr><th>Variable</th><th>Purpose</th></tr></thead><tbody>
+        <tr><td><code>RING2ZERO_TOKEN</code></td><td>Fixed auth token instead of a random one.</td></tr>
+        <tr><td><code>RING2ZERO_TLS_CERT</code> / <code>RING2ZERO_TLS_KEY</code></td><td>Serve <code>wss://</code> instead of <code>ws://</code>.</td></tr>
+        <tr><td><code>RING2ZERO_ICE_SERVERS</code></td><td>Comma-separated STUN/TURN servers, handed to the browser too. Needed only across NAT.</td></tr>
+        <tr><td><code>RING2ZERO_ICE_INTERFACE</code></td><td>Limit ICE candidates to one interface, e.g. <code>tailscale0</code>.</td></tr>
+        <tr><td><code>RING2ZERO_OUTPUT</code></td><td>Capture a named output on a multi-monitor machine.</td></tr>
+        <tr><td><code>RING2ZERO_MAX_FPS</code></td><td>Cap the frame rates, clamped to 1-1000.</td></tr>
+      </tbody></table></div>
+      <p>The tile grid size, WebP quality range and priority weights are compile-time defaults in <code>src/config.rs</code>. The client page is in English, and in Ukrainian through the shared Simple Linux language setting, the browser language, or <code>?lang=uk</code>.</p>
+
+      <h3>Performance, with its caveat</h3>
+      <p>The README publishes pipeline benchmarks measured in July 2026 (v0.277) on an i7-14650HX: about 0.13 ms per frame for static content, 0.47 ms for moderate activity, 0.63 ms for active work and 0.52 ms for a video window. These are the pipeline's own throughput ceiling, not the stream's output rate, which is capped at 60 FPS by default. The README says the diff, merge and encode stages have not changed since, while the transport and signaling layers have. Tile merging reduces tile counts by 83-99% (for example 20 627 to 247 tiles). I have not re-measured these on the current version for this page, so treat them as one machine's numbers; <code>cargo run --release --bin frame_profiler --features bench_tools</code> measures your own.</p>
+
+      <h3>What was tested, and what was not</h3>
+      <ul>
+        <li>131 unit tests cover the diff detector, tile merger, protocol, ACK tracking, ICE-server parsing, auth and the remote-control input state machine. A Node test covers the browser client's input capture. CI runs rustfmt, <code>clippy -D warnings</code> and a build with the PipeWire feature.</li>
+        <li>Remote control relies on wlroots-specific virtual-input protocols, so it does not work on compositors without them (the PipeWire backend gets the picture, not the input).</li>
+        <li>Known issue: on at least one Android Chrome build the picture can go black or stay the wrong size after the on-screen keyboard closes. A page reload recovers it. It is still under investigation.</li>
+        <li>The protocol changed in 0.400.0: an older cached <code>client.html</code> will not connect, so always use the page the binary serves.</li>
+      </ul>
+
+      <h3>Related</h3>
+      <p>Ring-2Zero uses the same language rule as the rest of <a href="../simple-linux/">Simple Linux</a>; see also <a href="../ustan/">ustan</a> and <a href="../tui-shim/">tui-shim</a>. Source: <a href="https://github.com/tarilka0gg/Ring-2Zero">github.com/tarilka0gg/Ring-2Zero</a>; the README and <code>docs/DEVELOPMENT.md</code> cover everything above in more depth.</p>
+
+      </article>
+
+    <footer class="lower">
+      <p>Linux developer · Gentoo · Rust</p>
+      <nav class="footer-links" aria-label="More">
+        <a href="../../">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="../../about/">About</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="../../assets/waves.js" defer></script>
+  <script src="../../assets/live.js" defer></script>
+</body>
+</html>
