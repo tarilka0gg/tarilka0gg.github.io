@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>About — tarilka0gg</title>
-  <meta name="description" content="About tarilka0gg, a Linux developer from Ukraine working on Gentoo, Rust and BreezyOps.">
+  <meta name="description" content="About tarilka0gg, a Linux developer from Ukraine: Simple Linux, Rust desktop tools, kernel and hardware tuning, and work with BreezyOps.">
   <meta name="theme-color" content="#090b10">
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,21 +25,95 @@
       </nav>
     </header>
 
-    <section class="content">
+    <section class="content wide">
       <h2>About</h2>
-      <p class="lead">Linux developer from Ukraine.</p>
+      <p class="lead">Linux developer from Ukraine. I build a Gentoo-based distribution and the tools around it, mostly in Rust.</p>
 
-      <p>I build <a href="https://github.com/tarilka0gg/simple-linux">Simple Linux</a>, a small distribution on top of Gentoo, and the tools around it, mostly in Rust: an installer, an app installer, an app store for Portage, terminal helpers and a screen streamer.</p>
+      <div class="grid-2">
+        <div>
+          <p>I build <a href="https://github.com/tarilka0gg/simple-linux">Simple Linux</a>, a small distribution on top of Gentoo: the live images, the installer, the kernels it deploys, the binary packages it installs from and the desktop it boots into.</p>
+          <p>Around it are the desktop tools it needed: an <a href="../projects/#portage-store">app store for Portage</a>, a <a href="../projects/#ustan">Windows-style app installer</a>, <a href="../projects/#tui-shim">terminal apps that act like desktop apps</a> and a <a href="../projects/#ring-2zero">Wayland screen streamer</a>.</p>
+        </div>
+        <div>
+          <p>My own machine is a gaming laptop running Gentoo that I tune myself, from the BIOS and kernel build to power limits and GPU clocks. Most of my tools started as something I needed there, and I keep <a href="https://github.com/tarilka0gg/system-lab">notes and measurements</a> of what worked and what did not.</p>
+          <p>I also work with <a href="https://github.com/breezyops-devlabs">BreezyOps Development Labs</a>, the company of <a href="https://github.com/danielrobbins">Daniel Robbins</a>, creator of Gentoo and Funtoo: testing, bug reports and fixes for its projects.</p>
+        </div>
+      </div>
 
-      <p>My own machine is a gaming laptop running Gentoo and OpenRC that I tune myself, from the kernel build to power and GPU clocks. Most of my tools started as something I needed there, and I keep notes and measurements of what worked and what did not.</p>
+      <p class="section-label">What I work on</p>
+      <ul class="projects">
+        <li>
+          <div><span class="title">Distribution building</span></div>
+          <p class="desc">Live ISOs, stage3, an installer with a resumable 16-phase pipeline, signed binary packages, release automation.</p>
+        </li>
+        <li>
+          <div><span class="title">Desktop apps</span></div>
+          <p class="desc">GTK4 and libadwaita apps in Rust that share one look and one language setting, plus terminal frontends on the same cores.</p>
+        </li>
+        <li>
+          <div><span class="title">Kernels</span></div>
+          <p class="desc">Configs for thousands of hardware combinations from Kconfig fragments, and Clang builds with LTO, AutoFDO and Propeller profiles.</p>
+        </li>
+        <li>
+          <div><span class="title">Hardware tuning</span></div>
+          <p class="desc">Undervolting, power limits, EC and fan control, deep idle on battery, GPU clock offsets on Wayland.</p>
+        </li>
+        <li>
+          <div><span class="title">Testing upstream</span></div>
+          <p class="desc">End-to-end tests of other people's tools on real roots and other architectures, with small, focused pull requests.</p>
+        </li>
+      </ul>
 
-      <p>I also work with <a href="https://github.com/breezyops-devlabs">BreezyOps Development Labs</a>, the company of <a href="https://github.com/danielrobbins">Daniel Robbins</a>, creator of Gentoo and Funtoo: testing, bug reports and fixes for its projects.</p>
+      <p class="section-label">How I work</p>
+      <ul class="projects">
+        <li>
+          <div><span class="title">Say what was tested</span></div>
+          <p class="desc">Every README says what was tested, how, and what was not. Numbers come from measurements, with the machine named.</p>
+        </li>
+        <li>
+          <div><span class="title">Show it</span></div>
+          <p class="desc">Every project has screenshots of the real program, so you can see what you get before installing.</p>
+        </li>
+        <li>
+          <div><span class="title">One family</span></div>
+          <p class="desc">Programs look alike and share one language setting, English by default.</p>
+        </li>
+        <li>
+          <div><span class="title">Built from need</span></div>
+          <p class="desc">Tools start as fixes for problems on my own machine and grow from there.</p>
+        </li>
+      </ul>
+
+      <p class="section-label">Languages and tools</p>
+      <ul class="chips">
+        <li>Rust</li><li>Zig</li><li>Shell</li><li>Python</li><li>C / C++</li><li>JavaScript</li>
+        <li>GTK4 + libadwaita</li><li>ratatui</li><li>Wayland</li><li>PipeWire</li><li>WebRTC</li><li>bubblewrap</li>
+        <li>Portage &amp; ebuilds</li><li>OpenRC</li><li>Kconfig</li><li>Clang / LLVM</li><li>AutoFDO &amp; Propeller</li>
+        <li>QEMU / KVM</li><li>GitHub Actions</li>
+      </ul>
+
+      <p class="section-label">My setup</p>
+      <dl class="facts">
+        <dt>Machine</dt><dd>HP Victus 16: Intel i7-14650HX, NVIDIA RTX 4070 laptop GPU</dd>
+        <dt>System</dt><dd>Gentoo with OpenRC, a CachyOS-based kernel built with Clang</dd>
+        <dt>Desktop</dt><dd>niri (scrolling tiling Wayland) with the Noctalia shell</dd>
+        <dt>Terminal</dt><dd>Ghostty, fish, micro</dd>
+      </dl>
+
+      <p class="section-label">Timeline</p>
+      <ol class="timeline">
+        <li><span class="when">Jun 2025</span><p>Joined GitHub.</p></li>
+        <li><span class="when">Jul 2026</span><p>Ring-2Zero, a Wayland screen streamer over WebRTC.</p></li>
+        <li><span class="when">Aug 2026</span><p>Portage Store 0.1.0.</p></li>
+        <li><span class="when">Sep 2026</span><p>system-lab and kernel-matrix. The installer, then the first Simple Linux release on September 30.</p></li>
+        <li><span class="when">Oct 2026</span><p>ustan, tui-shim, simple-locale and the signed binhost. 30 Simple Linux releases by the end of the month. First merged pull requests in Daniel Robbins' unroot, then work with BreezyOps Development Labs.</p></li>
+      </ol>
 
       <p class="section-label">Elsewhere</p>
       <ul class="projects">
         <li>
           <div><a class="title" href="https://github.com/tarilka0gg">GitHub</a><span class="kind">Code</span></div>
-          <p class="desc">All projects, releases and issues.</p>
+          <p class="desc">All projects, releases and issues. Ideas and bug reports are welcome in any repository.</p>
         </li>
         <li>
           <div><a class="title" href="https://www.linkedin.com/in/tarilka-0gg-8584a1433/">LinkedIn</a><span class="kind">Profile</span></div>

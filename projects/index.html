@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Projects — tarilka0gg</title>
-  <meta name="description" content="Simple Linux, its installer, ustan, Portage Store, tui-shim, Ring-2Zero and the other projects of tarilka0gg.">
+  <meta name="description" content="Simple Linux, its installer, Portage Store, ustan, tui-shim, Ring-2Zero, kernel-matrix and the other projects of tarilka0gg.">
   <meta name="theme-color" content="#090b10">
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,51 +25,130 @@
       </nav>
     </header>
 
-    <section class="content">
+    <section class="content wide">
       <h2>Projects</h2>
-      <p class="lead">A small Gentoo-based distribution and the tools it needed. Every project says in its README what was tested and what was not.</p>
+      <p class="lead">A small Gentoo-based distribution and the tools it needed, mostly in Rust. Every project has screenshots and a README that says what was tested and what was not.</p>
 
-      <p class="section-label">Simple Linux</p>
+      <nav class="jump" aria-label="On this page">
+        <a href="#simple-linux">Simple Linux</a>
+        <a href="#installer">Installer</a>
+        <a href="#portage-store">Portage Store</a>
+        <a href="#ustan">ustan</a>
+        <a href="#tui-shim">tui-shim</a>
+        <a href="#ring-2zero">Ring-2Zero</a>
+        <a href="#more">More</a>
+        <a href="#upstream">Upstream</a>
+      </nav>
+
+      <div class="features">
+        <article class="feature" id="simple-linux">
+          <a class="shot" href="https://github.com/tarilka0gg/simple-linux"><img src="../assets/img/simple-linux.png" alt="The Simple Linux live desktop: niri with the Noctalia bar and dock" width="1280" height="800" decoding="async"></a>
+          <div>
+            <h3><a href="https://github.com/tarilka0gg/simple-linux">Simple Linux</a></h3>
+            <p class="tagline">A small Gentoo-based live system with its own installer.</p>
+            <ul class="points">
+              <li>Online and offline ISOs (a minimal text image and a GUI image), plus the stage3 they install from.</li>
+              <li>The GUI image boots into niri with the Noctalia bar and dock, Ghostty, fish, Thunar, Zen Browser and Portage Store.</li>
+              <li>A kernel matched to the hardware, from <a href="#more">kernel-matrix</a>, and signed binary packages from its own binhost.</li>
+              <li>30 releases in its first month (Sep 30 to Oct 28, 2026).</li>
+            </ul>
+            <ul class="meta"><li>GPL-2.0</li><li>Gentoo · OpenRC · Limine</li><li>since Sep 2026</li><li><a href="https://github.com/tarilka0gg/simple-linux/releases">Releases</a></li></ul>
+          </div>
+        </article>
+
+        <article class="feature" id="installer">
+          <a class="shot" href="https://github.com/tarilka0gg/gentoo-installer"><img src="../assets/img/installer.png" alt="The GTK4 installer's software page with groups expanded" width="640" height="700" decoding="async"></a>
+          <div>
+            <h3><a href="https://github.com/tarilka0gg/gentoo-installer">Installer</a></h3>
+            <p class="tagline">Text and GTK4 frontends over one Rust core.</p>
+            <ul class="points">
+              <li>The text installer, the GTK4/libadwaita wizard and <code>--headless</code> run the same 16 phases, from partitioning to the bootloader.</li>
+              <li>A journal lets a failed install resume without redoing destructive steps.</li>
+              <li>Reads the CPU, GPU and laptop/desktop type and deploys a prebuilt kernel for it, falling back step by step to a generic x86-64 build. Nothing is compiled on the machine.</li>
+              <li>Can install into free space next to Windows or other Linux systems, never formats an existing EFI partition, and adds them to the Limine menu.</li>
+              <li>About ten minutes package by package, under two minutes for the default desktop (QEMU with KVM).</li>
+            </ul>
+            <ul class="meta"><li>GPL-2.0-or-later</li><li>Rust · GTK4 · ratatui</li><li>since Sep 2026</li></ul>
+          </div>
+        </article>
+
+        <article class="feature" id="portage-store">
+          <a class="shot" href="https://github.com/tarilka0gg/portage-store"><img src="../assets/img/portage-store.png" alt="Portage Store's Explore page with category tiles and carousels" width="1300" height="840" decoding="async"></a>
+          <div>
+            <h3><a href="https://github.com/tarilka0gg/portage-store">Portage Store</a></h3>
+            <p class="tagline">An app store for Gentoo Portage, with a CLI on the same core.</p>
+            <ul class="points">
+              <li>Search, install and update packages, with builds streaming live in a job queue.</li>
+              <li>Points out what Gentoo expects you to remember: security advisories, unread news, pending config updates, a stale tree, orphaned packages.</li>
+              <li>USE flags in the UI, starter bundles on first run.</li>
+              <li>The privilege model is documented up front, not hidden.</li>
+            </ul>
+            <ul class="meta"><li>GPL-2.0</li><li>Rust · GTK4 · libadwaita</li><li>since Aug 2026</li></ul>
+          </div>
+        </article>
+
+        <article class="feature" id="ustan">
+          <a class="shot" href="https://github.com/tarilka0gg/ustan"><img src="../assets/img/ustan.png" alt="ustan's manager window listing installed apps" width="1125" height="900" decoding="async"></a>
+          <div>
+            <h3><a href="https://github.com/tarilka0gg/ustan">ustan</a></h3>
+            <p class="tagline">A Windows-style app installer for Linux: open a package, press Install.</p>
+            <ul class="points">
+              <li>.deb, .rpm, Arch packages, AppImage, snap, Flatpak, .exe/.msi, archives, .jar and bare binaries.</li>
+              <li>Everything goes into your home directory. No root, a menu entry and an icon, and a clean uninstall.</li>
+              <li>Distro packages run with their files overlaid on <code>/usr</code> through bubblewrap. Snaps run without snapd, verified and sandboxed. Windows programs get a Wine prefix each.</li>
+              <li>Multi-gigabyte .xz archives are decoded on several threads (Zig over liblzma), and downloads are checked against published checksums.</li>
+            </ul>
+            <ul class="meta"><li>GPL-2.0</li><li>Rust · Zig · GTK4</li><li>since Oct 2026</li></ul>
+          </div>
+        </article>
+
+        <article class="feature" id="tui-shim">
+          <a class="shot" href="https://github.com/tarilka0gg/tui-shim"><img src="../assets/img/tui-shim.png" alt="tui-shim's floating file picker over an editor" width="1280" height="800" decoding="async"></a>
+          <div>
+            <h3><a href="https://github.com/tarilka0gg/tui-shim">tui-shim</a></h3>
+            <p class="tagline">Terminal apps that behave like desktop apps.</p>
+            <ul class="points">
+              <li>micro and nvim in Ghostty get a small folder badge. Click it or press F9 for a native file picker, and the file opens in the same window.</li>
+              <li>Search ignores case, ranks exact and prefix matches first and looks into sub-folders.</li>
+              <li>A launcher entry, an icon and its own window class for each terminal app, plus palette theming.</li>
+            </ul>
+            <ul class="meta"><li>GPL-3.0</li><li>Rust · GTK4 · layer-shell</li><li>since Oct 2026</li></ul>
+          </div>
+        </article>
+
+        <article class="feature" id="ring-2zero">
+          <a class="shot" href="https://github.com/tarilka0gg/Ring-2Zero"><img src="../assets/img/ring-2zero.png" alt="A Wayland desktop streamed into a browser tab by Ring-2Zero" width="1280" height="800" decoding="async"></a>
+          <div>
+            <h3><a href="https://github.com/tarilka0gg/Ring-2Zero">Ring-2Zero</a></h3>
+            <p class="tagline">Your Wayland desktop in a browser tab, over WebRTC.</p>
+            <ul class="points">
+              <li>Zero-copy capture through wlr-screencopy DMA-BUF, with a PipeWire portal fallback for GNOME and KDE.</li>
+              <li>The screen is cut into tiles and hashed in two stages. On a real desktop 85 to 99 % of tiles are skipped and only changed ones are sent, as WebP.</li>
+              <li>Tiles that change often, change fast or sit near the centre go first.</li>
+              <li>The browser client is built into the binary: run one program, open a URL. Remote mouse and keyboard are optional and off by default.</li>
+            </ul>
+            <ul class="meta"><li>MIT</li><li>Rust · WebRTC · Wayland</li><li>since Jul 2026</li></ul>
+          </div>
+        </article>
+      </div>
+
+      <p class="section-label" id="more">Distribution parts</p>
       <ul class="projects">
         <li>
-          <div><a class="title" href="https://github.com/tarilka0gg/simple-linux">Simple Linux</a><span class="kind">Distribution</span></div>
-          <p class="desc">A small Gentoo-based live system: online and offline ISOs, a kernel matched to your hardware, niri and Noctalia.</p>
+          <div><a class="title" href="https://github.com/tarilka0gg/kernel-matrix">kernel-matrix</a><span class="kind">Kernel · Shell</span></div>
+          <p class="desc">Kernel configs as a matrix: 19 CPUs × 7 GPUs × 5 platforms × 11 embedded controllers × 4 modems, 7,614 targets. Kconfig fragments are merged on a fixed seed, built in batches through one make jobserver, and checked by a script that catches options Kconfig silently drops.</p>
         </li>
         <li>
-          <div><a class="title" href="https://github.com/tarilka0gg/gentoo-installer">Installer</a><span class="kind">Rust · GTK4</span></div>
-          <p class="desc">Text and GTK4 frontends over one Rust core. Installs next to other systems, resumes after a failure, boots with Limine.</p>
+          <div><a class="title" href="https://github.com/tarilka0gg/simple-linux-binhost">simple-linux-binhost</a><span class="kind">Packages</span></div>
+          <p class="desc">Signed binary packages that Gentoo's own binhost lacks: niri, Noctalia, Ghostty, and the packages the installer builds with different USE flags. Also hosts the prebuilt kernels.</p>
         </li>
         <li>
-          <div><a class="title" href="https://github.com/tarilka0gg/portage-store">Portage Store</a><span class="kind">Rust · GTK4</span></div>
-          <p class="desc">An app store for Gentoo Portage: browse, search, USE flags, updates, and a CLI on the same core.</p>
+          <div><a class="title" href="https://github.com/tarilka0gg/simple-linux-configs">simple-linux-configs</a><span class="kind">Desktop</span></div>
+          <p class="desc">Clean default configs for niri, Hyprland, Sway, Scroll, Labwc, MangoWC, Triad and dwl, each paired with Noctalia as the bar.</p>
         </li>
         <li>
-          <div><a class="title" href="https://github.com/tarilka0gg/simple-linux-binhost">Binhost</a><span class="kind">Packages</span></div>
-          <p class="desc">Signed binary packages that Gentoo's own binhost lacks: niri, Noctalia, ghostty.</p>
-        </li>
-        <li>
-          <div><a class="title" href="https://github.com/tarilka0gg/kernel-matrix">kernel-matrix</a><span class="kind">Kernel</span></div>
-          <p class="desc">Kernel configs as a matrix of CPU, GPU, platform, EC and modem, merged from Kconfig fragments and verified.</p>
-        </li>
-      </ul>
-
-      <p class="section-label">Desktop tools</p>
-      <ul class="projects">
-        <li>
-          <div><a class="title" href="https://github.com/tarilka0gg/ustan">ustan</a><span class="kind">Rust · GTK4</span></div>
-          <p class="desc">A Windows-style app installer: .deb, .rpm, Arch packages, AppImage, snap, Flatpak, .exe. No root, clean uninstall.</p>
-        </li>
-        <li>
-          <div><a class="title" href="https://github.com/tarilka0gg/tui-shim">tui-shim</a><span class="kind">Rust</span></div>
-          <p class="desc">Terminal apps that behave like desktop apps: launchers, icons, palette theming and a file picker for editors.</p>
-        </li>
-        <li>
-          <div><a class="title" href="https://github.com/tarilka0gg/Ring-2Zero">Ring-2Zero</a><span class="kind">Rust · WebRTC</span></div>
-          <p class="desc">A Wayland screen streamer with tile-based diff encoding: your desktop in a browser tab.</p>
-        </li>
-        <li>
-          <div><a class="title" href="https://github.com/tarilka0gg/simple-linux-configs">Configs</a><span class="kind">Desktop</span></div>
-          <p class="desc">Clean default configs for niri, Hyprland, Sway, Labwc, MangoWC, dwl and more, paired with Noctalia.</p>
+          <div><a class="title" href="https://github.com/tarilka0gg/simple-locale">simple-locale</a><span class="kind">Rust · JS</span></div>
+          <p class="desc">One language setting for every Simple Linux program: a shared locale.toml next to the system locale, English by default. A Rust crate with a JavaScript twin.</p>
         </li>
       </ul>
 
@@ -77,27 +156,39 @@
       <ul class="projects">
         <li>
           <div><a class="title" href="https://github.com/tarilka0gg/system-lab">system-lab</a><span class="kind">Notes · Data</span></div>
-          <p class="desc">BIOS unlock, undervolting, RAPL/EC turbo and Clang + AutoFDO kernel builds on an HP Victus 16, with the measurements.</p>
+          <p class="desc">Everything done to the machine itself: BIOS unlock, undervolting through the OC mailbox, power limits, fans, and Clang + AutoFDO kernel builds. A 29-session journal, test logs and the CSVs behind each conclusion, in a SQLite data stack.</p>
         </li>
         <li>
-          <div><a class="title" href="https://github.com/tarilka0gg/power-scripts">power-scripts</a><span class="kind">Shell</span></div>
-          <p class="desc">Deep-idle power management for a gaming laptop on OpenRC and niri.</p>
+          <div><a class="title" href="https://github.com/tarilka0gg/power-scripts">power-scripts</a><span class="kind">Shell · OpenRC</span></div>
+          <p class="desc">Deep-idle power management for a gaming laptop: an idle toggle, a sustained-turbo fan daemon, an AC/battery switch, and EC settings re-applied after boot and resume.</p>
         </li>
         <li>
-          <div><a class="title" href="https://github.com/tarilka0gg/gpu-undervolt">gpu-undervolt</a><span class="kind">Shell</span></div>
-          <p class="desc">NVIDIA laptop GPU clock offsets at boot through a throwaway headless Xorg, on a Wayland-only system.</p>
+          <div><a class="title" href="https://github.com/tarilka0gg/gpu-undervolt">gpu-undervolt</a><span class="kind">Shell · NVIDIA</span></div>
+          <p class="desc">A clock offset for an NVIDIA laptop GPU (core +125, memory +250) applied at boot through a throwaway headless Xorg, so Coolbits works on a Wayland-only system.</p>
         </li>
       </ul>
 
-      <p class="section-label">Upstream</p>
+      <p class="section-label">Other</p>
+      <ul class="projects">
+        <li>
+          <div><a class="title" href="https://github.com/tarilka0gg/telegram-helper-rs">telegram-helper-rs</a><span class="kind">Rust · Zig</span></div>
+          <p class="desc">A Rust rewrite of TelegramHelper: a userbot and a control bot on grammers, a localhost dashboard, and Zig SIMD helpers.</p>
+        </li>
+      </ul>
+
+      <p class="section-label" id="upstream">Upstream</p>
       <ul class="projects">
         <li>
           <div><a class="title" href="https://github.com/danielrobbins/unroot">unroot</a><span class="kind">Contributions</span></div>
-          <p class="desc">Fixes for Daniel Robbins' Linux root filesystem tool: OCI layers, foreign-arch entry through QEMU, builds without LTO.</p>
+          <p class="desc">Testing and fixes for Daniel Robbins' Linux root filesystem tool: OCI layers, entering foreign-architecture roots through QEMU, test builds without LTO, dead-code cleanup. Tested end to end on x86-64 and arm64 roots.</p>
         </li>
         <li>
           <div><a class="title" href="https://github.com/danielrobbins/keychain">keychain</a><span class="kind">Contributions</span></div>
-          <p class="desc">Fixes for the ssh-agent and gpg-agent manager.</p>
+          <p class="desc">Fixes for the ssh-agent and gpg-agent manager: socket paths containing <code>;</code> and history expansion in csh.</p>
+        </li>
+        <li>
+          <div><a class="title" href="https://github.com/danielrobbins/sprouted-code">sprouted-code</a><span class="kind">Contributions</span></div>
+          <p class="desc">Making the documented local checks pass, and executable helper scripts.</p>
         </li>
       </ul>
     </section>
