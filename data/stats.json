@@ -1,9 +1,9 @@
 {
- "updated": "2026-11-15T18:41:05Z",
+ "updated": "2026-11-16T12:02:07Z",
  "repos": {
   "simple-linux": {
    "pushed_at": "2026-10-28T22:24:13Z",
-   "commits_30d": 33,
+   "commits_30d": 31,
    "releases": 43,
    "latest_release": {
     "tag": "v0.2.46",
@@ -13,13 +13,13 @@
   },
   "gentoo-installer": {
    "pushed_at": "2026-10-28T22:28:57Z",
-   "commits_30d": 65,
+   "commits_30d": 61,
    "releases": 0,
    "latest_release": null
   },
   "portage-store": {
    "pushed_at": "2026-10-20T11:16:32Z",
-   "commits_30d": 4,
+   "commits_30d": 3,
    "releases": 1,
    "latest_release": {
     "tag": "v0.1.0",
@@ -29,7 +29,7 @@
   },
   "simple-linux-binhost": {
    "pushed_at": "2026-10-28T22:24:24Z",
-   "commits_30d": 3,
+   "commits_30d": 2,
    "releases": 2,
    "latest_release": {
     "tag": "kernels",
@@ -39,19 +39,19 @@
   },
   "kernel-matrix": {
    "pushed_at": "2026-10-24T15:36:57Z",
-   "commits_30d": 3,
+   "commits_30d": 2,
    "releases": 0,
    "latest_release": null
   },
   "ustan": {
    "pushed_at": "2026-10-20T11:24:13Z",
-   "commits_30d": 7,
+   "commits_30d": 6,
    "releases": 0,
    "latest_release": null
   },
   "tui-shim": {
    "pushed_at": "2026-10-20T11:16:35Z",
-   "commits_30d": 4,
+   "commits_30d": 3,
    "releases": 0,
    "latest_release": null
   },
@@ -67,7 +67,7 @@
   },
   "simple-linux-configs": {
    "pushed_at": "2026-10-20T11:16:48Z",
-   "commits_30d": 2,
+   "commits_30d": 1,
    "releases": 0,
    "latest_release": null
   },
