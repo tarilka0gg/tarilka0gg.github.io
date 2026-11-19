@@ -1,9 +1,9 @@
 {
- "updated": "2026-11-18T12:13:14Z",
+ "updated": "2026-11-19T12:07:12Z",
  "repos": {
   "simple-linux": {
    "pushed_at": "2026-10-28T22:24:13Z",
-   "commits_30d": 19,
+   "commits_30d": 10,
    "releases": 43,
    "latest_release": {
     "tag": "v0.2.46",
@@ -13,13 +13,13 @@
   },
   "gentoo-installer": {
    "pushed_at": "2026-10-28T22:28:57Z",
-   "commits_30d": 43,
+   "commits_30d": 35,
    "releases": 0,
    "latest_release": null
   },
   "portage-store": {
    "pushed_at": "2026-10-20T11:16:32Z",
-   "commits_30d": 3,
+   "commits_30d": 0,
    "releases": 1,
    "latest_release": {
     "tag": "v0.1.0",
@@ -45,19 +45,19 @@
   },
   "ustan": {
    "pushed_at": "2026-10-20T11:24:13Z",
-   "commits_30d": 6,
+   "commits_30d": 0,
    "releases": 0,
    "latest_release": null
   },
   "tui-shim": {
    "pushed_at": "2026-10-20T11:16:35Z",
-   "commits_30d": 3,
+   "commits_30d": 0,
    "releases": 0,
    "latest_release": null
   },
   "Ring-2Zero": {
    "pushed_at": "2026-10-20T11:21:02Z",
-   "commits_30d": 5,
+   "commits_30d": 0,
    "releases": 1,
    "latest_release": {
     "tag": "v0.400.0",
@@ -67,13 +67,13 @@
   },
   "simple-linux-configs": {
    "pushed_at": "2026-10-20T11:16:48Z",
-   "commits_30d": 1,
+   "commits_30d": 0,
    "releases": 0,
    "latest_release": null
   },
   "simple-locale": {
    "pushed_at": "2026-10-20T11:16:37Z",
-   "commits_30d": 2,
+   "commits_30d": 0,
    "releases": 0,
    "latest_release": null
   },
