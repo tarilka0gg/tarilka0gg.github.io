@@ -1,5 +1,77 @@
 [
  {
+  "date": "2026-11-24T20:02:47Z",
+  "title": "perf(clipboard): decode list thumbnails on a worker",
+  "repo": "noctalia-dev/noctalia",
+  "kind": "merged PR",
+  "url": "https://github.com/noctalia-dev/noctalia/pull/5471",
+  "page": null
+ },
+ {
+  "date": "2026-11-24T19:20:23Z",
+  "title": "perf(dock): cache running app desktop-entry resolution",
+  "repo": "noctalia-dev/noctalia",
+  "kind": "merged PR",
+  "url": "https://github.com/noctalia-dev/noctalia/pull/5470",
+  "page": null
+ },
+ {
+  "date": "2026-11-24T17:25:23Z",
+  "title": "perf(lock-keys): keep LED brightness files open between polls",
+  "repo": "noctalia-dev/noctalia",
+  "kind": "merged PR",
+  "url": "https://github.com/noctalia-dev/noctalia/pull/5466",
+  "page": null
+ },
+ {
+  "date": "2026-11-24T17:21:14Z",
+  "title": "perf(sysmon): keep cpufreq files open between samples",
+  "repo": "noctalia-dev/noctalia",
+  "kind": "merged PR",
+  "url": "https://github.com/noctalia-dev/noctalia/pull/5468",
+  "page": null
+ },
+ {
+  "date": "2026-11-24T17:12:38Z",
+  "title": "perf(toplevels): coalesce toplevel change notifications",
+  "repo": "noctalia-dev/noctalia",
+  "kind": "merged PR",
+  "url": "https://github.com/noctalia-dev/noctalia/pull/5469",
+  "page": null
+ },
+ {
+  "date": "2026-11-24T16:36:48Z",
+  "title": "refactor: remove unused functions",
+  "repo": "noctalia-dev/noctalia",
+  "kind": "merged PR",
+  "url": "https://github.com/noctalia-dev/noctalia/pull/5475",
+  "page": null
+ },
+ {
+  "date": "2026-11-24T16:18:02Z",
+  "title": "perf(render): skip mipmaps for textures that are never minified",
+  "repo": "noctalia-dev/noctalia",
+  "kind": "merged PR",
+  "url": "https://github.com/noctalia-dev/noctalia/pull/5472",
+  "page": null
+ },
+ {
+  "date": "2026-11-24T16:16:25Z",
+  "title": "perf(launcher): build the calculator on first use",
+  "repo": "noctalia-dev/noctalia",
+  "kind": "merged PR",
+  "url": "https://github.com/noctalia-dev/noctalia/pull/5474",
+  "page": null
+ },
+ {
+  "date": "2026-11-24T16:04:52Z",
+  "title": "fix(ui): skip relayout when flex padding is unchanged",
+  "repo": "noctalia-dev/noctalia",
+  "kind": "merged PR",
+  "url": "https://github.com/noctalia-dev/noctalia/pull/5473",
+  "page": null
+ },
+ {
   "date": "2026-10-28T21:59:53Z",
   "title": "Simple Linux 0.2.46",
   "repo": "simple-linux",
@@ -245,78 +317,6 @@
   "repo": "simple-linux",
   "kind": "release",
   "url": "https://github.com/tarilka0gg/simple-linux/releases/tag/v0.2.15",
-  "page": "projects/simple-linux/"
- },
- {
-  "date": "2026-10-06T22:11:51Z",
-  "title": "Simple Linux 0.2.14",
-  "repo": "simple-linux",
-  "kind": "release",
-  "url": "https://github.com/tarilka0gg/simple-linux/releases/tag/v0.2.14",
-  "page": "projects/simple-linux/"
- },
- {
-  "date": "2026-10-06T21:25:34Z",
-  "title": "Simple Linux 0.2.13",
-  "repo": "simple-linux",
-  "kind": "release",
-  "url": "https://github.com/tarilka0gg/simple-linux/releases/tag/v0.2.13",
-  "page": "projects/simple-linux/"
- },
- {
-  "date": "2026-10-06T21:00:58Z",
-  "title": "Ring-2Zero v0.400.0",
-  "repo": "Ring-2Zero",
-  "kind": "release",
-  "url": "https://github.com/tarilka0gg/Ring-2Zero/releases/tag/v0.400.0",
-  "page": "projects/ring-2zero/"
- },
- {
-  "date": "2026-10-06T20:34:48Z",
-  "title": "Simple Linux 0.2.12",
-  "repo": "simple-linux",
-  "kind": "release",
-  "url": "https://github.com/tarilka0gg/simple-linux/releases/tag/v0.2.12",
-  "page": "projects/simple-linux/"
- },
- {
-  "date": "2026-10-06T20:18:58Z",
-  "title": "Simple Linux 0.2.11",
-  "repo": "simple-linux",
-  "kind": "release",
-  "url": "https://github.com/tarilka0gg/simple-linux/releases/tag/v0.2.11",
-  "page": "projects/simple-linux/"
- },
- {
-  "date": "2026-10-06T19:41:38Z",
-  "title": "Simple Linux 0.2.10",
-  "repo": "simple-linux",
-  "kind": "release",
-  "url": "https://github.com/tarilka0gg/simple-linux/releases/tag/v0.2.10",
-  "page": "projects/simple-linux/"
- },
- {
-  "date": "2026-10-06T19:11:33Z",
-  "title": "Simple Linux 0.2.9",
-  "repo": "simple-linux",
-  "kind": "release",
-  "url": "https://github.com/tarilka0gg/simple-linux/releases/tag/v0.2.9",
-  "page": "projects/simple-linux/"
- },
- {
-  "date": "2026-10-06T18:50:10Z",
-  "title": "Simple Linux 0.2.8",
-  "repo": "simple-linux",
-  "kind": "release",
-  "url": "https://github.com/tarilka0gg/simple-linux/releases/tag/v0.2.8",
-  "page": "projects/simple-linux/"
- },
- {
-  "date": "2026-10-06T17:44:44Z",
-  "title": "Simple Linux 0.2.7",
-  "repo": "simple-linux",
-  "kind": "release",
-  "url": "https://github.com/tarilka0gg/simple-linux/releases/tag/v0.2.7",
   "page": "projects/simple-linux/"
  }
 ]
