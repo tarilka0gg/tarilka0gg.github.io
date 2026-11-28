@@ -1,9 +1,9 @@
 {
- "updated": "2026-11-27T13:05:54Z",
+ "updated": "2026-11-28T12:19:35Z",
  "repos": {
   "simple-linux": {
    "pushed_at": "2026-10-28T22:24:13Z",
-   "commits_30d": 2,
+   "commits_30d": 0,
    "releases": 43,
    "latest_release": {
     "tag": "v0.2.46",
@@ -13,7 +13,7 @@
   },
   "gentoo-installer": {
    "pushed_at": "2026-10-28T22:28:57Z",
-   "commits_30d": 4,
+   "commits_30d": 0,
    "releases": 0,
    "latest_release": null
   },
@@ -29,7 +29,7 @@
   },
   "simple-linux-binhost": {
    "pushed_at": "2026-10-28T22:24:24Z",
-   "commits_30d": 2,
+   "commits_30d": 0,
    "releases": 2,
    "latest_release": {
     "tag": "kernels",
